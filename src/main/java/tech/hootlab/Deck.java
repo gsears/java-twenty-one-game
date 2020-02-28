@@ -14,7 +14,7 @@ import java.util.List;
  */
 public class Deck {
     // Define as linked list so we can use list (shuffle) and queue (poll) functionality.
-    LinkedList<Card> cardList = new LinkedList<>();
+    private LinkedList<Card> cardList = new LinkedList<>();
 
     /**
      * A static utility method for getting your bog-standard deck of cards from the ranks and suits
