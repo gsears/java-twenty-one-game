@@ -9,7 +9,7 @@ package tech.hootlab;
  */
 public class Hand extends Deck implements Comparable<Hand> {
 
-    int value = 0;
+    private int value = 0;
 
     /**
      * Adds a card to the deck, but also increments the value of the hand with it.
