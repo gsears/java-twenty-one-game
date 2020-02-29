@@ -9,4 +9,8 @@ public class Player {
         this.name = name;
         this.bank = initialBank;
     }
+
+    public Hand getHand() {
+        return hand;
+    }
 }

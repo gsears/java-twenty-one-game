@@ -12,14 +12,19 @@ import java.util.List;
  */
 public class GameModel {
 
+    public final int INITIAL_TOKENS = 200;
+    public final int STAKE = 20;
+
     boolean isGameActive = false;
-
+    // Game deck
     Deck deck;
-
     // Players
     List<Player> playerList = new LinkedList<>();
+    // Round
+    Round round;
+    // Dealer
     Player dealer;
-    Player currentPlayer;
+
 
     public GameModel() {
         reset();
@@ -32,23 +37,12 @@ public class GameModel {
 
     public void addPlayer(Player player) {
         playerList.add(player);
-        if (playerList.size() == 1) {
-            dealer = currentPlayer;
-        } else {
-            isGameActive = true;
-            if (currentPlayer == null) {
-                currentPlayer = player;
-            }
-        }
+
     }
 
     // TODO: Think about how to dynamically add and remove players from the game,
     // and what happens when they are removed.
     public void removePlayer(Player player) {
         playerList.remove(player);
-        if (playerList.size() == 1) {
-            isGameActive = false;
-            dealer = currentPlayer;
-        }
     }
 }
