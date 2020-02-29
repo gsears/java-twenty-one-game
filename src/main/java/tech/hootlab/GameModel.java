@@ -2,6 +2,7 @@ package tech.hootlab;
 
 import java.util.LinkedList;
 import java.util.List;
+import tech.hootlab.round.Round;
 
 /*
  * Game.java Gareth Sears - 2493194S
@@ -35,13 +36,12 @@ public class GameModel {
         deck.shuffle();
     }
 
+    // Players added and removed from the game should be added on next round.
     public void addPlayer(Player player) {
         playerList.add(player);
 
     }
 
-    // TODO: Think about how to dynamically add and remove players from the game,
-    // and what happens when they are removed.
     public void removePlayer(Player player) {
         playerList.remove(player);
     }
