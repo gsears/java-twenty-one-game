@@ -75,7 +75,7 @@ public class Round {
 
             // Transfer double stake to winner.
             for (Player loser : loserList) {
-                loser.transferTokens(stake * 2, winner);
+                loser.transferTokens(winner, stake * 2);
             }
             return winner;
         } else {
