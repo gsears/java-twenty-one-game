@@ -15,7 +15,6 @@ public class Round implements RoundObservable {
     // Listeners
     private List<RoundEventListener> roundEventListenerList = new LinkedList<>();
 
-
     private RoundState state = RoundState.FINISHED;
 
     private int stake;
@@ -87,13 +86,20 @@ public class Round implements RoundObservable {
         setNextPlayer();
     }
 
+    public List<Player> getWinnerList() {
+        return winnerList;
+    }
+
+    public List<Player> getLoserList() {
+        return loserList;
+    }
+
     // PRIVATE METHODS
     // Flow of control is internal. Listeners will know when to query state.
 
     private void setNextPlayer() {
         if (currentPlayer.equals(dealer)) {
             endRound();
-            // TODO: Calculate winners
             setState(RoundState.FINISHED);
         } else {
             currentPlayer = playerList.get(currentPlayerIndex++);
@@ -115,6 +121,8 @@ public class Round implements RoundObservable {
             Hand playerHand = playerList.get(playerIndex).getHand();
             playerHand.add(card);
         }
+
+        notifyRoundCardListeners();
     }
 
     /**
