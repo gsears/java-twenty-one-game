@@ -2,6 +2,7 @@ package tech.hootlab.client;
 
 import java.awt.*;
 import javax.swing.*;
+import javax.swing.border.EtchedBorder;
 import tech.hootlab.Ranks;
 import tech.hootlab.Suits;
 
@@ -22,18 +23,23 @@ public class CardView extends JPanel {
     String cardText;
 
     CardView(Suits suit, Ranks rank) {
-        setPreferredSize(new Dimension(90, 130));
+        setPreferredSize(new Dimension(80, 130));
         setBackground(Color.WHITE);
+        setBorder(BorderFactory.createEtchedBorder(Color.BLACK, Color.GRAY));
 
         setLayout(new GridBagLayout());
         GridBagConstraints c = new GridBagConstraints();
+
+        // TODO: Encapsulate this copy paste code
 
         JLabel cardText = new JLabel();
         cardText.setText(getCardText(suit, rank));
         cardText.setForeground(getCardColor(suit));
 
+        c.fill = GridBagConstraints.NONE;
         c.gridx = 0;
         c.gridy = 0;
+        c.gridwidth = 1;
         c.weightx = 0.5;
         c.weighty = 0.5;
         c.anchor = GridBagConstraints.FIRST_LINE_START;
@@ -44,8 +50,10 @@ public class CardView extends JPanel {
         cardText.setForeground(getCardColor(suit));
         cardText.setFont(new Font(cardText.getFont().getName(), Font.PLAIN, 24));
 
-        c.gridx = 1;
+        c.fill = GridBagConstraints.NONE;
+        c.gridx = 0;
         c.gridy = 1;
+        c.gridwidth = 3;
         c.weightx = 0.5;
         c.weighty = 0.5;
         c.anchor = GridBagConstraints.CENTER;
@@ -55,8 +63,10 @@ public class CardView extends JPanel {
         cardText.setText(getCardText(suit, rank));
         cardText.setForeground(getCardColor(suit));
 
+        c.fill = GridBagConstraints.NONE;
         c.gridx = 2;
         c.gridy = 2;
+        c.gridwidth = 1;
         c.weightx = 0.5;
         c.weighty = 0.5;
         c.anchor = GridBagConstraints.LAST_LINE_END;
@@ -139,7 +149,7 @@ public class CardView extends JPanel {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         // Create and set up the content pane.
-        JComponent newContentPane = new CardView(Suits.SPADES, Ranks.ACE);
+        JComponent newContentPane = new CardView(Suits.HEARTS, Ranks.TEN);
         newContentPane.setOpaque(true); // content panes must be opaque
         frame.setContentPane(newContentPane);
 
