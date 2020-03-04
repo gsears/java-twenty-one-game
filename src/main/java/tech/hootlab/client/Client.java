@@ -6,7 +6,8 @@ public class Client {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            GUI gui = new GUI();
+            ClientControllerInterface controller = new ClientController();
+            ClientView gui = new ClientView(controller);
             gui.setVisible(true);
         });
     }

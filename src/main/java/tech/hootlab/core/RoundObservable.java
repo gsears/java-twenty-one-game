@@ -1,4 +1,4 @@
-package tech.hootlab.round;
+package tech.hootlab.core;
 
 /**
  * An interface which allows RoundListeners to be added to the Round.

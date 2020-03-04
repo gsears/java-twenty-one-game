@@ -1,4 +1,4 @@
-package tech.hootlab;
+package tech.hootlab.core;
 
 public class Player {
     private String name;

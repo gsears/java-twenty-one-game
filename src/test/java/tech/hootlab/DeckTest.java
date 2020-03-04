@@ -11,6 +11,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import tech.hootlab.core.Card;
+import tech.hootlab.core.Deck;
+import tech.hootlab.core.Ranks;
+import tech.hootlab.core.Suits;
 
 class DeckTest {
 
@@ -29,9 +33,8 @@ class DeckTest {
 
         // Set checks for dupes
         for (Suits s : Suits.values()) {
-            Set<Card> suitSet = cardList.stream()
-                .filter(c -> c.getSuit() == s)
-                .collect(Collectors.toSet());
+            Set<Card> suitSet =
+                    cardList.stream().filter(c -> c.getSuit() == s).collect(Collectors.toSet());
 
             assertEquals(13, suitSet.size());
         }
@@ -45,9 +48,8 @@ class DeckTest {
 
         // Set checks for dupes
         for (Ranks r : Ranks.values()) {
-            Set<Card> rankSet = cardList.stream()
-                .filter(c -> c.getRank() == r)
-                .collect(Collectors.toSet());
+            Set<Card> rankSet =
+                    cardList.stream().filter(c -> c.getRank() == r).collect(Collectors.toSet());
 
             assertEquals(4, rankSet.size());
         }

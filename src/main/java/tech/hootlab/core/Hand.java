@@ -1,4 +1,4 @@
-package tech.hootlab;
+package tech.hootlab.core;
 
 /*
  * Hand.java Gareth Sears - 2493194S

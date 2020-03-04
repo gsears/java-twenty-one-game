@@ -1,11 +1,7 @@
-package tech.hootlab.round;
+package tech.hootlab.core;
 
 import java.util.LinkedList;
 import java.util.List;
-import tech.hootlab.Card;
-import tech.hootlab.Deck;
-import tech.hootlab.Hand;
-import tech.hootlab.Player;
 
 public class Round implements RoundObservable {
 
@@ -46,10 +42,11 @@ public class Round implements RoundObservable {
         winnerList = new LinkedList<>();
         loserList = new LinkedList<>();
 
-        setState(RoundState.IN_PROGRESS);
-
         deck.shuffle();
         deal();
+
+        setState(RoundState.IN_PROGRESS);
+
         checkForDealWinners();
     }
 
@@ -67,7 +64,7 @@ public class Round implements RoundObservable {
         Hand playerHand = currentPlayer.getHand();
 
         playerHand.add(newCard);
-        notifyRoundCardListeners();
+        notifyRoundCardChange();
 
         int handValue = playerHand.getValue();
 
@@ -75,7 +72,7 @@ public class Round implements RoundObservable {
             loserList.add(currentPlayer);
             playerList.remove(currentPlayer);
             currentPlayer.transferTokens(dealer, stake);
-            notifyRoundTokenChangeListeners();
+            notifyRoundTokenChange();
         } else if (handValue == HAND_MAXIMUM) {
             setNextPlayer();
         }
@@ -103,13 +100,13 @@ public class Round implements RoundObservable {
             setState(RoundState.FINISHED);
         } else {
             currentPlayer = playerList.get(currentPlayerIndex++);
-            notifyRoundPlayerListeners();
+            notifyRoundPlayerChange();
         }
     }
 
     private void setState(RoundState state) {
         this.state = state;
-        notifyRoundStateListeners();
+        notifyRoundStateChange();
     }
 
     private void deal() {
@@ -122,7 +119,9 @@ public class Round implements RoundObservable {
             playerHand.add(card);
         }
 
-        notifyRoundCardListeners();
+        // Not necessary because the round state is initialised on start...
+        // This will update all player's hands...
+        // notifyRoundCardChange();
     }
 
     /**
@@ -146,7 +145,7 @@ public class Round implements RoundObservable {
 
         if (winnerList.size() == 0) {
             // Listeners can safely fetch current player to start playing
-            notifyRoundPlayerListeners();
+            notifyRoundPlayerChange();
 
         } else {
 
@@ -164,7 +163,7 @@ public class Round implements RoundObservable {
                 }
 
                 // Tokens have changed hands...
-                notifyRoundTokenChangeListeners();
+                notifyRoundTokenChange();
 
             } else {
 
@@ -191,7 +190,7 @@ public class Round implements RoundObservable {
                 winnerList.add(player);
             }
         }
-        notifyRoundTokenChangeListeners();
+        notifyRoundTokenChange();
         setState(RoundState.FINISHED);
     }
 
@@ -211,19 +210,19 @@ public class Round implements RoundObservable {
         roundEventListenerList.stream().forEach(l -> l.roundEventReceived(event));
     }
 
-    public void notifyRoundStateListeners() {
+    public void notifyRoundStateChange() {
         notifyRoundEventListeners(RoundEvent.STATE_CHANGED);
     }
 
-    public void notifyRoundPlayerListeners() {
+    public void notifyRoundPlayerChange() {
         notifyRoundEventListeners(RoundEvent.PLAYER_CHANGED);
     }
 
-    public void notifyRoundCardListeners() {
+    public void notifyRoundCardChange() {
         notifyRoundEventListeners(RoundEvent.CARD_CHANGED);
     }
 
-    public void notifyRoundTokenChangeListeners() {
+    public void notifyRoundTokenChange() {
         notifyRoundEventListeners(RoundEvent.TOKEN_CHANGED);
     }
 

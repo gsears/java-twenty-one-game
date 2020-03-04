@@ -1,10 +1,14 @@
 package tech.hootlab.client;
 
-import java.awt.*;
-import javax.swing.*;
-import javax.swing.border.EtchedBorder;
-import tech.hootlab.Ranks;
-import tech.hootlab.Suits;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import javax.swing.BorderFactory;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import tech.hootlab.core.Ranks;
+import tech.hootlab.core.Suits;
 
 public class CardView extends JPanel {
     private static final long serialVersionUID = 1L;
@@ -19,23 +23,15 @@ public class CardView extends JPanel {
     String QUEEN_STRING = "Q";
     String KING_STRING = "K";
 
-
-    String cardText;
-
     CardView(Suits suit, Ranks rank) {
-        setPreferredSize(new Dimension(80, 130));
+        // setPreferredSize(new Dimension(width, height));
         setBackground(Color.WHITE);
         setBorder(BorderFactory.createEtchedBorder(Color.BLACK, Color.GRAY));
 
         setLayout(new GridBagLayout());
         GridBagConstraints c = new GridBagConstraints();
 
-        // TODO: Encapsulate this copy paste code
-
-        JLabel cardText = new JLabel();
-        cardText.setText(getCardText(suit, rank));
-        cardText.setForeground(getCardColor(suit));
-
+        JLabel smallLabelTopLeft = getCardLabel(suit, rank, 16);
         c.fill = GridBagConstraints.NONE;
         c.gridx = 0;
         c.gridy = 0;
@@ -43,13 +39,9 @@ public class CardView extends JPanel {
         c.weightx = 0.5;
         c.weighty = 0.5;
         c.anchor = GridBagConstraints.FIRST_LINE_START;
-        add(cardText, c);
+        add(smallLabelTopLeft, c);
 
-        cardText = new JLabel();
-        cardText.setText(getCardText(suit, rank));
-        cardText.setForeground(getCardColor(suit));
-        cardText.setFont(new Font(cardText.getFont().getName(), Font.PLAIN, 24));
-
+        JLabel centreLabel = getCardLabel(suit, rank, 24);
         c.fill = GridBagConstraints.NONE;
         c.gridx = 0;
         c.gridy = 1;
@@ -57,12 +49,9 @@ public class CardView extends JPanel {
         c.weightx = 0.5;
         c.weighty = 0.5;
         c.anchor = GridBagConstraints.CENTER;
-        add(cardText, c);
+        add(centreLabel, c);
 
-        cardText = new JLabel();
-        cardText.setText(getCardText(suit, rank));
-        cardText.setForeground(getCardColor(suit));
-
+        JLabel smallLabelBottomRight = getCardLabel(suit, rank, 16);
         c.fill = GridBagConstraints.NONE;
         c.gridx = 2;
         c.gridy = 2;
@@ -70,11 +59,27 @@ public class CardView extends JPanel {
         c.weightx = 0.5;
         c.weighty = 0.5;
         c.anchor = GridBagConstraints.LAST_LINE_END;
-        add(cardText, c);
+        add(smallLabelBottomRight, c);
 
     }
 
+    private JLabel getCardLabel(Suits suit, Ranks rank, int fontSize) {
+
+        JLabel cardLabel = new JLabel();
+
+        Color cardColor = getCardColor(suit);
+        cardLabel.setForeground(cardColor);
+
+        String cardText = getCardText(suit, rank);
+        cardLabel.setText(cardText);
+
+        cardLabel.setFont(new Font(cardLabel.getFont().getName(), Font.PLAIN, fontSize));
+
+        return cardLabel;
+    }
+
     private Color getCardColor(Suits suit) {
+
         switch (suit) {
             case SPADES:
                 return Color.BLACK;
@@ -94,6 +99,7 @@ public class CardView extends JPanel {
     }
 
     private String getCardText(Suits suit, Ranks rank) {
+
         String suitStr = "";
         String rankStr = "";
 
@@ -143,18 +149,4 @@ public class CardView extends JPanel {
         return String.format("%s%s", rankStr, suitStr);
     }
 
-    public static void main(String[] args) {
-        // Create and set up the window.
-        JFrame frame = new JFrame("LayeredPaneDemo");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        // Create and set up the content pane.
-        JComponent newContentPane = new CardView(Suits.HEARTS, Ranks.TEN);
-        newContentPane.setOpaque(true); // content panes must be opaque
-        frame.setContentPane(newContentPane);
-
-        // Display the window.
-        frame.pack();
-        frame.setVisible(true);
-    }
 }

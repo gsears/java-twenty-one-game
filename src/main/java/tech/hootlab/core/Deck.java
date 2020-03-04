@@ -1,4 +1,4 @@
-package tech.hootlab;
+package tech.hootlab.core;
 
 import java.util.Collections;
 import java.util.LinkedList;
