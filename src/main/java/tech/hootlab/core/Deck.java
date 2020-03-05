@@ -39,8 +39,9 @@ public class Deck {
     /**
      * Shuffle the deck.
      */
-    public void shuffle() {
+    public Deck shuffle() {
         Collections.shuffle(cardList);
+        return this;
     }
 
     /**

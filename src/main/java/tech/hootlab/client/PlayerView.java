@@ -2,57 +2,45 @@ package tech.hootlab.client;
 
 import java.awt.*;
 import javax.swing.*;
-import javax.swing.JPanel;
-import javax.swing.border.TitledBorder;
+import tech.hootlab.core.Player;
 
 public class PlayerView extends JPanel {
     private static final long serialVersionUID = 1L;
 
-    JLabel tokenCountLabel;
-    JLabel handValueLabel;
-    String playerName;
-    Color defaultBackground;
+    private Player player;
 
-    public PlayerView(String playerName) {
-        defaultBackground = getBackground();
-        setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
-        setBorder(new TitledBorder(playerName));
+    private PlayerInfoView playerInfoView;
+    private PlayerHandView playerHandView;
 
-        tokenCountLabel = new JLabel();
-        handValueLabel = new JLabel();
+    public PlayerView(Player player, int width, int height) {
+        this.player = player;
 
-        // Initialise
-        setDealer(false);
-        setTokens(0);
-        setHandValue(0);
+        // Layout
+        setLayout(new BorderLayout());
+        playerHandView = new PlayerHandView(width, height);
+        playerInfoView = new PlayerInfoView(player);
 
-        add(tokenCountLabel);
-        add(Box.createRigidArea(new Dimension(5, 0)));
-        add(handValueLabel);
+        add(playerInfoView, BorderLayout.NORTH);
+        add(playerHandView, BorderLayout.CENTER);
+
+        render();
+    }
+
+    public void setCurrentPlayer(boolean isCurrentPlayer) {
+        playerInfoView.setCurrentPlayer(isCurrentPlayer);
+        // Auto scroll to show the current player
+        this.scrollRectToVisible(this.getBounds());
     }
 
     public void setDealer(boolean isDealer) {
-        String dealerStr = isDealer ? " (dealer)" : "";
-        setBorder(new TitledBorder(String.format("%s%s", playerName, dealerStr)));
+        playerInfoView.setDealer(isDealer);
     }
 
-    public void setTokens(int numTokens) {
-        tokenCountLabel.setText(String.format("Tokens: %d", numTokens));
-    }
+    public void render() {
+        // Render info
+        playerInfoView.render();
 
-    public void setHandValue(int handValue) {
-        handValueLabel.setText(String.format("Hand Value: %d", handValue));
-    }
-
-    public void setWinner() {
-        setBackground(Color.GREEN);
-    }
-
-    public void setLoser() {
-        setBackground(Color.RED);
-    }
-
-    public void setPlaying() {
-        setBackground(defaultBackground);
+        // Render cards
+        playerHandView.setHand(player.getHand());
     }
 }

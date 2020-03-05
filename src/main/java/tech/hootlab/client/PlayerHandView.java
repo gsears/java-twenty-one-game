@@ -3,8 +3,12 @@ package tech.hootlab.client;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Point;
+
 import javax.swing.JFrame;
 import javax.swing.JLayeredPane;
+
+import tech.hootlab.core.Card;
+import tech.hootlab.core.Hand;
 import tech.hootlab.core.Ranks;
 import tech.hootlab.core.Suits;
 
@@ -14,7 +18,7 @@ import tech.hootlab.core.Suits;
  * Inherits from JLayeredPane to allow cards to overlap. Because nice looking things get good marks,
  * right?
  */
-public class HandView extends JLayeredPane {
+public class PlayerHandView extends JLayeredPane {
     private static final long serialVersionUID = 1L;
 
     final private Color DARK_GREEN = new Color(0, 153, 0);
@@ -31,7 +35,7 @@ public class HandView extends JLayeredPane {
      *
      * Defaults to 800x250, just because.
      */
-    public HandView() {
+    public PlayerHandView() {
         this(800, 250);
     }
 
@@ -42,7 +46,7 @@ public class HandView extends JLayeredPane {
      * @param width  The width of the container
      * @param height
      */
-    public HandView(int width, int height) {
+    public PlayerHandView(int width, int height) {
         setOpaque(true);
         setPreferredSize(new Dimension(width, height));
         setBackground(DARK_GREEN);
@@ -60,20 +64,21 @@ public class HandView extends JLayeredPane {
 
     }
 
-    /**
-     * Adds a card to the player's hand view.
-     *
-     * @param suit The card's suit.
-     * @param rank The card's rank.
-     */
-    public void addCard(Suits suit, Ranks rank) {
-        CardView card = new CardView(suit, rank);
+    public void setHand(Hand hand) {
+        clearCards();
+        hand.getCardList().stream().forEach(card -> {
+            addCard(card);
+        });
+    }
+
+    private void addCard(Card card) {
+        CardView cardView = new CardView(card);
         int cardWidth = 2 * widthOffsetUnit;
 
         // This ensures an overlap
-        card.setLocation(offset.x, offset.y);
-        card.setSize(cardWidth, cardHeight);
-        add(card, new Integer(cardDepth));
+        cardView.setLocation(offset.x, offset.y);
+        cardView.setSize(cardWidth, cardHeight);
+        add(cardView, new Integer(cardDepth));
 
         // Repaint to make sure display is updated.
         repaint();
@@ -87,13 +92,12 @@ public class HandView extends JLayeredPane {
     /**
      * Removes the cards in a player's hand.
      */
-    public void clearCards() {
+    private void clearCards() {
         // Reset the offset.
         offset = new Point(widthOffsetUnit, heightOffsetUnit);
         removeAll();
         repaint();
     }
-
 
     public static void main(String[] args) {
         // Create and set up the window.
@@ -101,7 +105,7 @@ public class HandView extends JLayeredPane {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         // Create and set up the content pane.
-        HandView cardContainer = new HandView(800, 250);
+        PlayerHandView cardContainer = new PlayerHandView(800, 250);
         cardContainer.setOpaque(true); // content panes must be opaque
         frame.setContentPane(cardContainer);
 
@@ -109,10 +113,10 @@ public class HandView extends JLayeredPane {
         frame.pack();
         frame.setVisible(true);
 
-        cardContainer.addCard(Suits.CLUBS, Ranks.TEN);
-        cardContainer.addCard(Suits.DIAMONDS, Ranks.ACE);
-        cardContainer.addCard(Suits.HEARTS, Ranks.ACE);
-        cardContainer.clearCards();
-        cardContainer.addCard(Suits.HEARTS, Ranks.ACE);
+        Hand hand = new Hand();
+        hand.add(new Card(Suits.CLUBS, Ranks.ACE));
+        hand.add(new Card(Suits.HEARTS, Ranks.THREE));
+
+        cardContainer.setHand(hand);
     }
 }

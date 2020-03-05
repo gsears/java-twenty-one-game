@@ -7,47 +7,32 @@ public class Round implements RoundObservable {
 
     // Hand maximum
     private static final int HAND_MAXIMUM = 21;
+    private static final int NUM_DEALT_CARDS = 2;
 
     // Listeners
     private List<RoundEventListener> roundEventListenerList = new LinkedList<>();
 
-    private RoundState state = RoundState.FINISHED;
-
-    private int stake;
-
-    private int numPlayers;
     private List<Player> playerList;
-
-    private int dealerIndex;
+    private RoundState state;
     private Player dealer;
-
+    private int stake;
     private int currentPlayerIndex;
     private Player currentPlayer;
+    private Deck deck;
 
-    private List<Player> winnerList;
-    private List<Player> loserList;
+    Round(List<Player> initialPlayerList, Player dealer, int stake) {
 
-    private Deck deck = Deck.getStandardDeck();
-
-    Round(List<Player> playerList, Player dealer, int stake) {
-        this.numPlayers = playerList.size();
-        this.playerList = playerList;
         this.dealer = dealer;
         this.stake = stake;
+        this.playerList = initPlayerList(initialPlayerList);
 
-        dealerIndex = playerList.indexOf(dealer);
-        currentPlayerIndex = (dealerIndex + 1) % numPlayers;
-        currentPlayer = playerList.get(currentPlayerIndex);
+        // No initial player (may not get a turn if natural 21)
+        this.currentPlayerIndex = -1;
+        this.currentPlayer = null;
 
-        winnerList = new LinkedList<>();
-        loserList = new LinkedList<>();
+        this.deck = Deck.getStandardDeck().shuffle();
 
-        deck.shuffle();
-        deal();
-
-        setState(RoundState.IN_PROGRESS);
-
-        checkForDealWinners();
+        setState(RoundState.READY);
     }
 
     public RoundState getState() {
@@ -56,6 +41,13 @@ public class Round implements RoundObservable {
 
     public Player getCurrentPlayer() {
         return currentPlayer;
+    }
+
+    // Start the round
+    public void start() {
+        deal();
+        setState(RoundState.IN_PROGRESS);
+        checkForDealWinners();
     }
 
     // CurrentPlayerHit
@@ -69,10 +61,11 @@ public class Round implements RoundObservable {
         int handValue = playerHand.getValue();
 
         if (handValue > HAND_MAXIMUM) {
-            loserList.add(currentPlayer);
-            playerList.remove(currentPlayer);
+
+            currentPlayer.setStatus(PlayerState.LOSER);
             currentPlayer.transferTokens(dealer, stake);
             notifyRoundTokenChange();
+
         } else if (handValue == HAND_MAXIMUM) {
             setNextPlayer();
         }
@@ -83,21 +76,33 @@ public class Round implements RoundObservable {
         setNextPlayer();
     }
 
-    public List<Player> getWinnerList() {
-        return winnerList;
-    }
-
-    public List<Player> getLoserList() {
-        return loserList;
-    }
-
     // PRIVATE METHODS
     // Flow of control is internal. Listeners will know when to query state.
+
+    private List<Player> initPlayerList(List<Player> playerList) {
+
+        List<Player> orderedPlayerList = new LinkedList<>();
+
+        int numPlayers = playerList.size();
+        int dealerIndex = playerList.indexOf(dealer);
+
+        // Start counting from the dealer's 'left' for positional priority later
+        for (int i = 1; i < numPlayers + 1; i++) {
+            int playerIndex = (dealerIndex + i) % numPlayers;
+
+            Player player = playerList.get(playerIndex);
+            orderedPlayerList.add(player);
+
+            // Set status to waiting
+            player.setStatus(PlayerState.WAITING);
+        }
+
+        return orderedPlayerList;
+    }
 
     private void setNextPlayer() {
         if (currentPlayer.equals(dealer)) {
             endRound();
-            setState(RoundState.FINISHED);
         } else {
             currentPlayer = playerList.get(currentPlayerIndex++);
             notifyRoundPlayerChange();
@@ -110,18 +115,13 @@ public class Round implements RoundObservable {
     }
 
     private void deal() {
-        // Two cards each
-        for (int i = 1; i <= numPlayers * 2; i++) {
-            // Deal one card by one starting from the left of the dealer
-            int playerIndex = (i + dealerIndex) % numPlayers;
-            Card card = deck.deal();
-            Hand playerHand = playerList.get(playerIndex).getHand();
-            playerHand.add(card);
+        for (Player player : playerList) {
+            for (int i = 0; i < NUM_DEALT_CARDS; i++) {
+                Card card = deck.deal();
+                Hand playerHand = player.getHand();
+                playerHand.add(card);
+            }
         }
-
-        // Not necessary because the round state is initialised on start...
-        // This will update all player's hands...
-        // notifyRoundCardChange();
     }
 
     /**
@@ -131,65 +131,74 @@ public class Round implements RoundObservable {
      */
     private void checkForDealWinners() {
 
-        // Add any players who have 21 to the winner list
-        for (int i = 1; i < numPlayers + 1; i++) {
+        List<Player> winnerList = new LinkedList<>();
 
-            // Start counting from the dealer's 'left' for positional priority later
-            int playerIndex = (dealerIndex + i) % numPlayers;
-            Player player = playerList.get(playerIndex);
-
+        for (Player player : playerList) {
             if (player.getHand().getValue() == HAND_MAXIMUM) {
+                player.setStatus(PlayerState.WINNER);
                 winnerList.add(player);
             }
         }
 
-        if (winnerList.size() == 0) {
-            // Listeners can safely fetch current player to start playing
-            notifyRoundPlayerChange();
+        int numWinners = winnerList.size();
 
+        if (numWinners == 0) { // No winners on deal
+            setNextPlayer();
         } else {
+            if (numWinners == 1) { // One winner on deal
 
-            // If there is a single winner...
-            if (winnerList.size() == 1) {
                 Player winner = winnerList.get(0);
 
-                // Update the loserlist
-                loserList = new LinkedList<>(playerList);
-                loserList.remove(winner);
-
-                // Transfer double stake to winner.
-                for (Player loser : loserList) {
-                    loser.transferTokens(winner, stake * 2);
+                for (Player player : playerList) {
+                    if (!player.equals(winner)) {
+                        player.transferTokens(winner, stake * 2);
+                        player.setStatus(PlayerState.LOSER);
+                    }
                 }
 
-                // Tokens have changed hands...
-                notifyRoundTokenChange();
-
-            } else {
-
+            } else { // More than one winner on deal
                 if (!winnerList.contains(dealer)) {
                     // dealer is player with positional priority.
                     dealer = winnerList.get(0);
                 }
-                // No losers, so no money is exchanged / no tokenChangeUpdates
+                // No winners / losers, so no money is exchanged / no tokenChangeUpdates
             }
 
+            notifyRoundTokenChange();
             setState(RoundState.FINISHED);
         }
     }
 
     private void endRound() {
-        // Calculate winners / losers in the game
+
+        // Get remaining players
+        List<Player> remainingPlayers = new LinkedList<>();
+
         for (Player player : playerList) {
-            int comparison = player.getHand().compareTo(dealer.getHand());
-            if (comparison < 0) {
-                player.transferTokens(dealer, stake);
-                loserList.add(player);
-            } else if (comparison > 0) {
-                dealer.transferTokens(player, stake);
-                winnerList.add(player);
+            if (player.getStatus() == PlayerState.WAITING) {
+                remainingPlayers.add(player);
             }
         }
+
+        // If dealer goes over 21, he pays remaining winners
+        if (dealer.getStatus() == PlayerState.LOSER) {
+            for (Player player : remainingPlayers) {
+                dealer.transferTokens(player, stake);
+                player.setStatus(PlayerState.WINNER);
+            }
+        } else { // Otherwise, compare to the dealer and pay accordingly
+            for (Player player : remainingPlayers) {
+                int comparison = player.getHand().compareTo(dealer.getHand());
+                if (comparison < 0) {
+                    player.transferTokens(dealer, stake);
+                    player.setStatus(PlayerState.LOSER);
+                } else if (comparison > 0) {
+                    dealer.transferTokens(player, stake);
+                    player.setStatus(PlayerState.WINNER);
+                }
+            }
+        }
+
         notifyRoundTokenChange();
         setState(RoundState.FINISHED);
     }
@@ -209,6 +218,9 @@ public class Round implements RoundObservable {
     public void notifyRoundEventListeners(RoundEvent event) {
         roundEventListenerList.stream().forEach(l -> l.roundEventReceived(event));
     }
+
+    // TODO: Set only to PlayerStateChange() and pass players
+    // TODO: Set only to RoundStateChange() and pass info (current player / dealer)
 
     public void notifyRoundStateChange() {
         notifyRoundEventListeners(RoundEvent.STATE_CHANGED);

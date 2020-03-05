@@ -4,9 +4,12 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+
+import tech.hootlab.core.Card;
 import tech.hootlab.core.Ranks;
 import tech.hootlab.core.Suits;
 
@@ -23,7 +26,11 @@ public class CardView extends JPanel {
     String QUEEN_STRING = "Q";
     String KING_STRING = "K";
 
-    CardView(Suits suit, Ranks rank) {
+    Card card;
+
+    CardView(Card card) {
+
+        this.card = card;
         // setPreferredSize(new Dimension(width, height));
         setBackground(Color.WHITE);
         setBorder(BorderFactory.createEtchedBorder(Color.BLACK, Color.GRAY));
@@ -31,7 +38,7 @@ public class CardView extends JPanel {
         setLayout(new GridBagLayout());
         GridBagConstraints c = new GridBagConstraints();
 
-        JLabel smallLabelTopLeft = getCardLabel(suit, rank, 16);
+        JLabel smallLabelTopLeft = createCardLabel(16);
         c.fill = GridBagConstraints.NONE;
         c.gridx = 0;
         c.gridy = 0;
@@ -41,7 +48,7 @@ public class CardView extends JPanel {
         c.anchor = GridBagConstraints.FIRST_LINE_START;
         add(smallLabelTopLeft, c);
 
-        JLabel centreLabel = getCardLabel(suit, rank, 24);
+        JLabel centreLabel = createCardLabel(24);
         c.fill = GridBagConstraints.NONE;
         c.gridx = 0;
         c.gridy = 1;
@@ -51,7 +58,7 @@ public class CardView extends JPanel {
         c.anchor = GridBagConstraints.CENTER;
         add(centreLabel, c);
 
-        JLabel smallLabelBottomRight = getCardLabel(suit, rank, 16);
+        JLabel smallLabelBottomRight = createCardLabel(16);
         c.fill = GridBagConstraints.NONE;
         c.gridx = 2;
         c.gridy = 2;
@@ -63,7 +70,10 @@ public class CardView extends JPanel {
 
     }
 
-    private JLabel getCardLabel(Suits suit, Ranks rank, int fontSize) {
+    private JLabel createCardLabel(int fontSize) {
+
+        Suits suit = card.getSuit();
+        Ranks rank = card.getRank();
 
         JLabel cardLabel = new JLabel();
 

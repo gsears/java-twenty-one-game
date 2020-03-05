@@ -2,8 +2,10 @@ package tech.hootlab.core;
 
 public class Player {
     private String name;
-    private int tokens; // The money / chips / whatever...
-    private Hand hand = new Hand();
+    private int tokens;
+    private Hand hand = new Hand(); // Initialise with empty hand.
+
+    private PlayerState status = PlayerState.WAITING;
 
     public Player(String name, int initialTokens) {
         this.name = name;
@@ -16,6 +18,18 @@ public class Player {
 
     public Hand getHand() {
         return hand;
+    }
+
+    public void clearHand() {
+        hand = new Hand();
+    }
+
+    public PlayerState getStatus() {
+        return status;
+    }
+
+    public void setStatus(PlayerState status) {
+        this.status = status;
     }
 
     public int getTokens() {
@@ -32,6 +46,5 @@ public class Player {
             tokens -= numTokens;
         }
     }
-
 
 }

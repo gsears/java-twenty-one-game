@@ -7,7 +7,7 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 
-public class HandButtonView extends JPanel {
+public class PlayerControlView extends JPanel {
     private static final long serialVersionUID = 1L;
 
     JButton hitButton;
@@ -18,9 +18,11 @@ public class HandButtonView extends JPanel {
      *
      * @param controller The controller.
      */
-    HandButtonView(ClientControllerInterface controller) {
+    PlayerControlView(ClientControllerInterface controller) {
         setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
         setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
+
+        add(Box.createHorizontalGlue());
 
         // Create hit button
         hitButton = new JButton("Hit");
@@ -29,7 +31,6 @@ public class HandButtonView extends JPanel {
         });
         add(hitButton);
 
-        add(Box.createHorizontalGlue());
         add(Box.createRigidArea(new Dimension(10, 0)));
 
         // Create stick button
