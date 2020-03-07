@@ -16,9 +16,9 @@ public class Hand extends Deck implements Comparable<Hand> {
      */
     @Override
     public void add(Card card) {
-        Ranks rank = card.getRank();
+        CardRanks rank = card.getRank();
 
-        if (rank == Ranks.ACE) {
+        if (rank == CardRanks.ACE) {
             if (value < 11) {
                 value += 11;
             } else {

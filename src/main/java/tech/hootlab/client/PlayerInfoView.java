@@ -7,6 +7,7 @@ import javax.swing.JPanel;
 import tech.hootlab.core.Player;
 
 public class PlayerInfoView extends JPanel {
+    private static final long serialVersionUID = 1L;
 
     private static final int HORIZONTAL_PADDING = 10;
 

@@ -7,6 +7,6 @@ package tech.hootlab.core;
 /**
  * An enum class containing card suits
  */
-public enum Suits {
+public enum CardSuits {
     SPADES, HEARTS, CLUBS, DIAMONDS
 }

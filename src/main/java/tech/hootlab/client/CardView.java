@@ -10,8 +10,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import tech.hootlab.core.Card;
-import tech.hootlab.core.Ranks;
-import tech.hootlab.core.Suits;
+import tech.hootlab.core.CardRanks;
+import tech.hootlab.core.CardSuits;
 
 public class CardView extends JPanel {
     private static final long serialVersionUID = 1L;
@@ -72,8 +72,8 @@ public class CardView extends JPanel {
 
     private JLabel createCardLabel(int fontSize) {
 
-        Suits suit = card.getSuit();
-        Ranks rank = card.getRank();
+        CardSuits suit = card.getSuit();
+        CardRanks rank = card.getRank();
 
         JLabel cardLabel = new JLabel();
 
@@ -88,7 +88,7 @@ public class CardView extends JPanel {
         return cardLabel;
     }
 
-    private Color getCardColor(Suits suit) {
+    private Color getCardColor(CardSuits suit) {
 
         switch (suit) {
             case SPADES:
@@ -108,7 +108,7 @@ public class CardView extends JPanel {
         }
     }
 
-    private String getCardText(Suits suit, Ranks rank) {
+    private String getCardText(CardSuits suit, CardRanks rank) {
 
         String suitStr = "";
         String rankStr = "";

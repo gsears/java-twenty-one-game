@@ -9,8 +9,8 @@ import javax.swing.JLayeredPane;
 
 import tech.hootlab.core.Card;
 import tech.hootlab.core.Hand;
-import tech.hootlab.core.Ranks;
-import tech.hootlab.core.Suits;
+import tech.hootlab.core.CardRanks;
+import tech.hootlab.core.CardSuits;
 
 /**
  * A class which displays a hand on the player's 'table'.
@@ -114,8 +114,8 @@ public class PlayerHandView extends JLayeredPane {
         frame.setVisible(true);
 
         Hand hand = new Hand();
-        hand.add(new Card(Suits.CLUBS, Ranks.ACE));
-        hand.add(new Card(Suits.HEARTS, Ranks.THREE));
+        hand.add(new Card(CardSuits.CLUBS, CardRanks.ACE));
+        hand.add(new Card(CardSuits.HEARTS, CardRanks.THREE));
 
         cardContainer.setHand(hand);
     }

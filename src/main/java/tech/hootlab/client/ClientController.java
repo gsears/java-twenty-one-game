@@ -1,6 +1,10 @@
 package tech.hootlab.client;
 
-public class ClientController implements ClientControllerInterface {
+public class ClientController {
+
+    public void login(String playerName) {
+        System.out.println("login");
+    }
 
     public void hit() {
         System.out.println("hit");
@@ -10,4 +14,7 @@ public class ClientController implements ClientControllerInterface {
         System.out.println("stick");
     }
 
+    public void deal() {
+        System.out.println("stick");
+    }
 }

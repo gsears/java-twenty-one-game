@@ -24,8 +24,8 @@ public class Deck {
      */
     public static Deck getStandardDeck() {
         Deck deck = new Deck();
-        for (Suits suit : Suits.values()) {
-            for (Ranks rank : Ranks.values()) {
+        for (CardSuits suit : CardSuits.values()) {
+            for (CardRanks rank : CardRanks.values()) {
                 deck.add(new Card(suit, rank));
             }
         }

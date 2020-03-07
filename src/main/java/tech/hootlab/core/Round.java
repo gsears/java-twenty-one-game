@@ -1,23 +1,29 @@
 package tech.hootlab.core;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-public class Round implements RoundObservable {
+public class Round implements PropertyChangeObservable {
 
-    // Hand maximum
     private static final int HAND_MAXIMUM = 21;
     private static final int NUM_DEALT_CARDS = 2;
 
-    // Listeners
-    private List<RoundEventListener> roundEventListenerList = new LinkedList<>();
+    // Observable attributes
+    public static final String STATE_CHANGE_EVENT = "ROUND_STATE_CHANGE";
+    public static final String CURRENT_PLAYER_CHANGE_EVENT = "ROUND_CURRENT_PLAYER_CHANGE";
+    public static final String DEALER_CHANGE_EVENT = "ROUND_DEALER_CHANGE";
+    private PropertyChangeSupport propertyChangeSupport;
 
+    private List<Player> removedPlayerList = new LinkedList<>();
     private List<Player> playerList;
     private RoundState state;
     private Player dealer;
-    private int stake;
-    private int currentPlayerIndex;
     private Player currentPlayer;
+    private Iterator<Player> playerTurnIterator;
+    private int stake;
     private Deck deck;
 
     Round(List<Player> initialPlayerList, Player dealer, int stake) {
@@ -25,9 +31,9 @@ public class Round implements RoundObservable {
         this.dealer = dealer;
         this.stake = stake;
         this.playerList = initPlayerList(initialPlayerList);
+        this.playerTurnIterator = playerList.iterator();
 
         // No initial player (may not get a turn if natural 21)
-        this.currentPlayerIndex = -1;
         this.currentPlayer = null;
 
         this.deck = Deck.getStandardDeck().shuffle();
@@ -35,13 +41,6 @@ public class Round implements RoundObservable {
         setState(RoundState.READY);
     }
 
-    public RoundState getState() {
-        return state;
-    }
-
-    public Player getCurrentPlayer() {
-        return currentPlayer;
-    }
 
     // Start the round
     public void start() {
@@ -50,29 +49,44 @@ public class Round implements RoundObservable {
         checkForDealWinners();
     }
 
-    // CurrentPlayerHit
-    public void hitWithCurrentPlayer() {
-        Card newCard = deck.deal();
-        Hand playerHand = currentPlayer.getHand();
+    public void removePlayer(Player player) {
+        // Keep the player 'in game' (their tokens are up for grabs),
+        // just ensure they are skipped.
 
-        playerHand.add(newCard);
-        notifyRoundCardChange();
-
-        int handValue = playerHand.getValue();
-
-        if (handValue > HAND_MAXIMUM) {
-
-            currentPlayer.setStatus(PlayerState.LOSER);
-            currentPlayer.transferTokens(dealer, stake);
-            notifyRoundTokenChange();
-
-        } else if (handValue == HAND_MAXIMUM) {
+        // If player is current player, skip them.
+        if (player.equals(currentPlayer)) {
             setNextPlayer();
+        } else {
+            removedPlayerList.add(player);
         }
 
     }
 
+    // CurrentPlayerHit
+    public void hitWithCurrentPlayer() {
+
+        if (state != RoundState.IN_PROGRESS) {
+            throw new IllegalStateException("Round not in progess");
+        }
+
+        Card newCard = deck.deal();
+        currentPlayer.addCardToHand(newCard);
+        int handValue = currentPlayer.getHandValue();
+
+        if (handValue > HAND_MAXIMUM) {
+            currentPlayer.setStatus(PlayerState.LOSER);
+            currentPlayer.transferTokens(dealer, stake);
+        } else if (handValue == HAND_MAXIMUM) {
+            setNextPlayer();
+        }
+    }
+
     public void stickWithCurrentPlayer() {
+
+        if (state != RoundState.IN_PROGRESS) {
+            throw new IllegalStateException("Round not in progess");
+        }
+
         setNextPlayer();
     }
 
@@ -93,29 +107,39 @@ public class Round implements RoundObservable {
             Player player = playerList.get(playerIndex);
             orderedPlayerList.add(player);
 
-            // Set status to waiting
-            player.setStatus(PlayerState.WAITING);
+            player.setStatus(PlayerState.PLAYING);
         }
 
         return orderedPlayerList;
     }
 
     private void setNextPlayer() {
-        if (currentPlayer.equals(dealer)) {
-            endRound();
+
+        if (playerTurnIterator.hasNext()) {
+            Player previousPlayer = currentPlayer;
+            currentPlayer = playerTurnIterator.next();
+            propertyChangeSupport.firePropertyChange(CURRENT_PLAYER_CHANGE_EVENT, previousPlayer,
+                    currentPlayer);
+
+            // If the player has been removed during the round, recur until a next one is found
+            // or we die looking.
+            if (removedPlayerList.contains(currentPlayer)) {
+                setNextPlayer();
+            }
+
         } else {
-            currentPlayer = playerList.get(currentPlayerIndex++);
-            notifyRoundPlayerChange();
+            endRound();
         }
     }
 
     private void setState(RoundState state) {
+        propertyChangeSupport.firePropertyChange(STATE_CHANGE_EVENT, this.state, state);
         this.state = state;
-        notifyRoundStateChange();
     }
 
     private void deal() {
         for (Player player : playerList) {
+            // Two cards each is standard...
             for (int i = 0; i < NUM_DEALT_CARDS; i++) {
                 Card card = deck.deal();
                 Hand playerHand = player.getHand();
@@ -134,7 +158,7 @@ public class Round implements RoundObservable {
         List<Player> winnerList = new LinkedList<>();
 
         for (Player player : playerList) {
-            if (player.getHand().getValue() == HAND_MAXIMUM) {
+            if (player.getHandValue() == HAND_MAXIMUM) {
                 player.setStatus(PlayerState.WINNER);
                 winnerList.add(player);
             }
@@ -142,11 +166,12 @@ public class Round implements RoundObservable {
 
         int numWinners = winnerList.size();
 
-        if (numWinners == 0) { // No winners on deal
+        // No winners on deal
+        if (numWinners == 0) {
             setNextPlayer();
         } else {
-            if (numWinners == 1) { // One winner on deal
-
+            // One winner on deal
+            if (numWinners == 1) {
                 Player winner = winnerList.get(0);
 
                 for (Player player : playerList) {
@@ -156,15 +181,18 @@ public class Round implements RoundObservable {
                     }
                 }
 
-            } else { // More than one winner on deal
+                // More than one winner on deal
+            } else {
                 if (!winnerList.contains(dealer)) {
+                    Player previousDealer = dealer;
                     // dealer is player with positional priority.
                     dealer = winnerList.get(0);
+                    propertyChangeSupport.firePropertyChange(DEALER_CHANGE_EVENT, previousDealer,
+                            dealer);
                 }
                 // No winners / losers, so no money is exchanged / no tokenChangeUpdates
             }
 
-            notifyRoundTokenChange();
             setState(RoundState.FINISHED);
         }
     }
@@ -175,7 +203,7 @@ public class Round implements RoundObservable {
         List<Player> remainingPlayers = new LinkedList<>();
 
         for (Player player : playerList) {
-            if (player.getStatus() == PlayerState.WAITING) {
+            if (player.getStatus() == PlayerState.PLAYING) {
                 remainingPlayers.add(player);
             }
         }
@@ -199,43 +227,27 @@ public class Round implements RoundObservable {
             }
         }
 
-        notifyRoundTokenChange();
         setState(RoundState.FINISHED);
     }
 
-    // Listener Methods
-
     @Override
-    public void addRoundEventListener(RoundEventListener roundEventListener) {
-        roundEventListenerList.add(roundEventListener);
+    public void addPropertyChangeListener(String propertyName, PropertyChangeListener pcl) {
+        propertyChangeSupport.addPropertyChangeListener(propertyName, pcl);
     }
 
     @Override
-    public void removeRoundEventListener(RoundEventListener roundEventListener) {
-        roundEventListenerList.remove(roundEventListener);
+    public void addPropertyChangeListener(PropertyChangeListener pcl) {
+        propertyChangeSupport.addPropertyChangeListener(pcl);
     }
 
-    public void notifyRoundEventListeners(RoundEvent event) {
-        roundEventListenerList.stream().forEach(l -> l.roundEventReceived(event));
+    @Override
+    public void removePropertyChangeListener(String propertyName, PropertyChangeListener pcl) {
+        propertyChangeSupport.removePropertyChangeListener(propertyName, pcl);
     }
 
-    // TODO: Set only to PlayerStateChange() and pass players
-    // TODO: Set only to RoundStateChange() and pass info (current player / dealer)
-
-    public void notifyRoundStateChange() {
-        notifyRoundEventListeners(RoundEvent.STATE_CHANGED);
-    }
-
-    public void notifyRoundPlayerChange() {
-        notifyRoundEventListeners(RoundEvent.PLAYER_CHANGED);
-    }
-
-    public void notifyRoundCardChange() {
-        notifyRoundEventListeners(RoundEvent.CARD_CHANGED);
-    }
-
-    public void notifyRoundTokenChange() {
-        notifyRoundEventListeners(RoundEvent.TOKEN_CHANGED);
+    @Override
+    public void removePropertyChangeListener(PropertyChangeListener pcl) {
+        propertyChangeSupport.removePropertyChangeListener(pcl);
     }
 
 }

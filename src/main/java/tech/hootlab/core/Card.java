@@ -9,19 +9,19 @@ package tech.hootlab.core;
  */
 public class Card {
 
-    private Suits suit;
-    private Ranks rank;
+    private CardSuits suit;
+    private CardRanks rank;
 
-    public Card(Suits suit, Ranks rank) {
+    public Card(CardSuits suit, CardRanks rank) {
         this.suit = suit;
         this.rank = rank;
     }
 
-    public Suits getSuit() {
+    public CardSuits getSuit() {
         return suit;
     }
 
-    public Ranks getRank() {
+    public CardRanks getRank() {
         return rank;
     }
 

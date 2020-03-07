@@ -13,8 +13,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import tech.hootlab.core.Card;
 import tech.hootlab.core.Deck;
-import tech.hootlab.core.Ranks;
-import tech.hootlab.core.Suits;
+import tech.hootlab.core.CardRanks;
+import tech.hootlab.core.CardSuits;
 
 class DeckTest {
 
@@ -32,7 +32,7 @@ class DeckTest {
         List<Card> cardList = deck.getCardList();
 
         // Set checks for dupes
-        for (Suits s : Suits.values()) {
+        for (CardSuits s : CardSuits.values()) {
             Set<Card> suitSet =
                     cardList.stream().filter(c -> c.getSuit() == s).collect(Collectors.toSet());
 
@@ -47,7 +47,7 @@ class DeckTest {
         List<Card> cardList = deck.getCardList();
 
         // Set checks for dupes
-        for (Ranks r : Ranks.values()) {
+        for (CardRanks r : CardRanks.values()) {
             Set<Card> rankSet =
                     cardList.stream().filter(c -> c.getRank() == r).collect(Collectors.toSet());
 
