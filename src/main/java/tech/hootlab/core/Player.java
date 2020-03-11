@@ -2,11 +2,12 @@ package tech.hootlab.core;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
-public class Player implements PropertyChangeObservable {
+public class Player implements PropertyChangeObservable, Serializable {
 
     private String ID;
     private String name;
@@ -75,6 +76,10 @@ public class Player implements PropertyChangeObservable {
         return tokens;
     }
 
+    public void setTokens(int tokens) {
+        this.tokens = tokens;
+    }
+
     public void transferTokens(Player target, int numTokens) {
         int previousTokens = tokens;
 
@@ -108,6 +113,16 @@ public class Player implements PropertyChangeObservable {
     @Override
     public void removePropertyChangeListener(PropertyChangeListener pcl) {
         propertyChangeSupport.removePropertyChangeListener(pcl);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Player) {
+            return ID.equals(((Player) obj).getID());
+        } else {
+            return false;
+        }
+
     }
 
 }

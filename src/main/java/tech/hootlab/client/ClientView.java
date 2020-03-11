@@ -1,7 +1,15 @@
 package tech.hootlab.client;
 
-import java.awt.*;
-import javax.swing.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import javax.swing.BoxLayout;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 
 public class ClientView extends JFrame {
     private static final long serialVersionUID = 1L;
@@ -21,21 +29,31 @@ public class ClientView extends JFrame {
 
         JPanel userPanel = new JPanel(new BorderLayout());
         userPanel.setMinimumSize(new Dimension(WINDOW_WIDTH, PLAYER_SECTION_HEIGHT));
-        LoginView loginView = new LoginView(controller);
-        // PlayerView userView = new PlayerView(p0, WINDOW_WIDTH, PLAYER_SECTION_HEIGHT);
+
+        PlayerView userView = new PlayerView(null, WINDOW_WIDTH, PLAYER_SECTION_HEIGHT);
 
         PlayerControlView playerHandButtonView = new PlayerControlView(controller);
-        userPanel.add(loginView, BorderLayout.CENTER);
+        userPanel.add(userView, BorderLayout.CENTER);
         userPanel.add(playerHandButtonView, BorderLayout.SOUTH);
 
         JSplitPane pane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, gameContainer, userPanel);
 
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        // HANDLE QUIT ELEGANTLY and POLITELY
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        this.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent winEvt) {
+                controller.quit();
+            }
+        });
+
         add(pane);
         pack();
         setLocationByPlatform(true);
 
     }
+
+
 
 }
 

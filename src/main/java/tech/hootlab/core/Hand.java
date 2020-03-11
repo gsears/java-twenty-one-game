@@ -1,5 +1,7 @@
 package tech.hootlab.core;
 
+import java.io.Serializable;
+
 /*
  * Hand.java Gareth Sears - 2493194S
  */
@@ -7,7 +9,7 @@ package tech.hootlab.core;
 /**
  * A class which represents a players hand.
  */
-public class Hand extends Deck implements Comparable<Hand> {
+public class Hand extends Deck implements Comparable<Hand>, Serializable {
 
     int value = 0;
 

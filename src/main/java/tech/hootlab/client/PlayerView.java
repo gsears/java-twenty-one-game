@@ -26,6 +26,11 @@ public class PlayerView extends JPanel {
         render();
     }
 
+    public void setPlayer(Player player) {
+        this.player = player;
+        render();
+    }
+
     public void setCurrentPlayer(boolean isCurrentPlayer) {
         playerInfoView.setCurrentPlayer(isCurrentPlayer);
         // Auto scroll to show the current player
@@ -37,10 +42,15 @@ public class PlayerView extends JPanel {
     }
 
     public void render() {
-        // Render info
-        playerInfoView.render();
+        if (player != null) {
+            // Render info
+            playerInfoView.render();
 
-        // Render cards
-        playerHandView.setHand(player.getHand());
+            // Render cards
+            playerHandView.setHand(player.getHand());
+        } else {
+
+        }
+
     }
 }

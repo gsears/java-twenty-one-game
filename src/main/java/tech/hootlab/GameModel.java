@@ -1,10 +1,8 @@
 package tech.hootlab;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 import tech.hootlab.core.Player;
 import tech.hootlab.core.Round;
 import tech.hootlab.core.RoundState;
@@ -16,7 +14,8 @@ import tech.hootlab.core.RoundState;
 /**
  * A class representing the state of a game.
  */
-public class GameModel implements PropertyChangeListener {
+public class GameModel {
+    private final static Logger LOGGER = Logger.getLogger(GameModel.class.getName());
 
     public final int INITIAL_TOKENS = 200;
     public final int STAKE = 20;
@@ -29,33 +28,45 @@ public class GameModel implements PropertyChangeListener {
     Player dealer;
 
     // Players added and removed from the game should be added on next round.
-    public void addPlayer(String ID, String playerName) {
+    public Player addPlayer(String ID, String playerName) {
         Player player = new Player(ID, playerName, INITIAL_TOKENS);
-        player.addPropertyChangeListener(this);
         playerMap.put(ID, player);
+
+        // If it's the first player, they're the dealer!
+        if (playerMap.size() == 1) {
+            LOGGER.info("Dealer set to: " + player);
+            dealer = player;
+        }
+
+        LOGGER.info("Player added: " + player);
+        LOGGER.info("Dealer is: " + dealer);
+
+        return player;
     }
 
     // This will be called by the client on close
-    public void removePlayer(String ID) {
+    public Player removePlayer(String ID) {
         Player player = playerMap.get(ID);
-        removePlayer(player);
+        return removePlayer(player);
     }
 
     // This will be called by the server, on deadbeat-has-no-money-left.
-    public void removePlayer(Player player) {
+    public Player removePlayer(Player player) {
+        LOGGER.info("Removing player: " + player);
+
+        playerMap.remove(player.getID());
+
         if (dealer.equals(player) && playerMap.size() > 0) {
+            LOGGER.info("Player was dealer, assigning new dealer... ");
             // Assign dealer to first player in map
             dealer = playerMap.values().iterator().next();
+            LOGGER.info("New dealer set to: " + dealer);
         }
 
         if (round != null) {
             round.removePlayer(player);
         }
-
-        playerMap.remove(player.getID());
-
-
-        // Update clients so they can update their views?
+        return player;
     }
 
     private void handleRoundChange(RoundState roundState) {
@@ -79,37 +90,5 @@ public class GameModel implements PropertyChangeListener {
         }
     }
 
-    @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-        switch (evt.getPropertyName()) {
 
-            // Player Events
-            case Player.HAND_CHANGE_EVENT:
-                // Serialise and send
-                break;
-
-            case Player.STATUS_CHANGE_EVENT:
-                // Serialise and send
-                break;
-
-            case Player.TOKEN_CHANGE_EVENT:
-                // Serialise and send
-                break;
-
-            case Round.CURRENT_PLAYER_CHANGE_EVENT:
-                // Serialise and send
-                break;
-
-            case Round.STATE_CHANGE_EVENT:
-                // Controller
-                handleRoundChange((RoundState) evt.getNewValue());
-                // Serialise and send to clients
-
-                break;
-
-            default:
-                break;
-        }
-
-    }
 }
