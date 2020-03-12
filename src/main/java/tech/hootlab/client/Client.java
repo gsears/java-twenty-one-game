@@ -36,6 +36,7 @@ public class Client {
         model = new ClientModel();
         controller = new ClientController(model, server, new ClientSettings(name, tokens));
         view = new ClientView(model, controller);
+        controller.setView(view);
 
         view.setVisible(true);
 

@@ -99,24 +99,24 @@ public class PlayerHandView extends JLayeredPane {
         repaint();
     }
 
-    public static void main(String[] args) {
-        // Create and set up the window.
-        JFrame frame = new JFrame("LayeredPaneDemo");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    // public static void main(String[] args) {
+    // // Create and set up the window.
+    // JFrame frame = new JFrame("LayeredPaneDemo");
+    // frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        // Create and set up the content pane.
-        PlayerHandView cardContainer = new PlayerHandView(800, 250);
-        cardContainer.setOpaque(true); // content panes must be opaque
-        frame.setContentPane(cardContainer);
+    // // Create and set up the content pane.
+    // PlayerHandView cardContainer = new PlayerHandView(800, 250);
+    // cardContainer.setOpaque(true); // content panes must be opaque
+    // frame.setContentPane(cardContainer);
 
-        // Display the window.
-        frame.pack();
-        frame.setVisible(true);
+    // // Display the window.
+    // frame.pack();
+    // frame.setVisible(true);
 
-        Hand hand = new Hand();
-        hand.add(new Card(CardSuits.CLUBS, CardRanks.ACE));
-        hand.add(new Card(CardSuits.HEARTS, CardRanks.THREE));
+    // Hand hand = new Hand();
+    // hand.add(new Card(CardSuits.CLUBS, CardRanks.ACE));
+    // hand.add(new Card(CardSuits.HEARTS, CardRanks.THREE));
 
-        cardContainer.setHand(hand);
-    }
+    // cardContainer.setHand(hand);
+    // }
 }

@@ -10,7 +10,7 @@ import java.util.logging.Logger;
 import javax.swing.SwingWorker;
 import tech.hootlab.core.Hand;
 import tech.hootlab.core.Player;
-import tech.hootlab.server.ClientServerMessage;
+import tech.hootlab.server.SocketMessage;
 
 public class ClientController {
     private final static Logger LOGGER = Logger.getLogger(ClientController.class.getName());
@@ -18,6 +18,7 @@ public class ClientController {
     private String userID;
     private ClientSettings clientSettings;
     private ClientModel model;
+    private ClientView view;
 
     private ObjectOutputStream objectOutputStream;
 
@@ -32,14 +33,21 @@ public class ClientController {
             e.printStackTrace();
         }
 
-        ReadWorker rw = new ReadWorker(server);
-        rw.execute();
+
 
         // Connect with user settings
 
     }
 
-    private class ReadWorker extends SwingWorker<Void, ClientServerMessage> {
+    public void setView(ClientView view) {
+        LOGGER.info("View set to: " + view);
+        this.view = view;
+
+        ReadWorker rw = new ReadWorker(server);
+        rw.execute();
+    }
+
+    private class ReadWorker extends SwingWorker<Void, SocketMessage> {
         private ObjectInputStream inputStream;
 
         public ReadWorker(Socket server) {
@@ -51,9 +59,9 @@ public class ClientController {
         }
 
         public Void doInBackground() {
-            ClientServerMessage message;
+            SocketMessage message;
             try {
-                while ((message = (ClientServerMessage) inputStream.readObject()) != null) {
+                while ((message = (SocketMessage) inputStream.readObject()) != null) {
                     publish(message);
                 }
             } catch (ClassNotFoundException e) {
@@ -64,21 +72,22 @@ public class ClientController {
             return null;
         }
 
-        protected void process(List<ClientServerMessage> messageList) {
+        protected void process(List<SocketMessage> messageList) {
+            LOGGER.info("Processing message: " + messageList);
             // Pop last message
-            ClientServerMessage message = messageList.get(messageList.size() - 1);
+            SocketMessage message = messageList.get(messageList.size() - 1);
 
             switch (message.getMessage()) {
-                case ClientServerMessage.CONNECT:
+                case SocketMessage.CONNECT:
                     // #2 - Second stage of connection, set the ID here
                     connect((String) message.getContent());
                     break;
 
-                case ClientServerMessage.ADD_PLAYER:
+                case SocketMessage.ADD_PLAYER:
                     addPlayer((Player) message.getContent());
                     break;
 
-                case ClientServerMessage.REMOVE_PLAYER:
+                case SocketMessage.REMOVE_PLAYER:
                     removePlayer((Player) message.getContent());
                     break;
 
@@ -88,26 +97,26 @@ public class ClientController {
         }
     }
 
-    private void connect(String userID) {
+    private synchronized void connect(String userID) {
         this.userID = userID;
         LOGGER.info("Sending settings to server...");
-        sendMessage(ClientServerMessage.CONNECT, clientSettings);
+        sendMessage(SocketMessage.CONNECT, clientSettings);
     }
 
     private void addPlayer(Player player) {
         if (player.getID().equals(userID)) {
-            model.setUser(player);
+            view.setUser(player);
         } else {
-            model.addPlayer(player);
+            view.addPlayer(player);
         }
     }
 
-    private void removePlayer(Player player) {
+    private synchronized void removePlayer(Player player) {
         if (player.getID().equals(userID)) {
             // You've been kicked out for being too poor, you deadbeat.
             quit();
         } else {
-            model.removePlayer(player);
+            view.removePlayer(player);
         }
     }
 
@@ -121,7 +130,6 @@ public class ClientController {
     }
 
 
-
     public void setDealer(Player player) {
         model.setDealer(player);
     }
@@ -132,22 +140,22 @@ public class ClientController {
 
     // Messages to server
     public void disconnect() {
-        sendMessage(ClientServerMessage.DISCONNECT);
+        sendMessage(SocketMessage.DISCONNECT);
         LOGGER.info("disconnect");
     }
 
     public void hit() {
-        sendMessage(ClientServerMessage.HIT);
+        sendMessage(SocketMessage.HIT);
         LOGGER.info("hit");
     }
 
     public void stick() {
-        sendMessage(ClientServerMessage.STICK);
+        sendMessage(SocketMessage.STICK);
         LOGGER.info("stick");
     }
 
     public void deal() {
-        sendMessage(ClientServerMessage.DEAL);
+        sendMessage(SocketMessage.DEAL);
         LOGGER.info("deal");
     }
 
@@ -157,7 +165,7 @@ public class ClientController {
 
     private void sendMessage(String message, Serializable payload) {
         try {
-            objectOutputStream.writeObject(new ClientServerMessage(message, payload));
+            objectOutputStream.writeObject(new SocketMessage(message, payload));
         } catch (IOException e) {
             e.printStackTrace();
         }

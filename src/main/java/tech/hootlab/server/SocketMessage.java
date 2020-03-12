@@ -2,7 +2,7 @@ package tech.hootlab.server;
 
 import java.io.Serializable;
 
-public class ClientServerMessage implements Serializable {
+public class SocketMessage implements Serializable {
     private static final long serialVersionUID = 1L;
 
 
@@ -20,7 +20,7 @@ public class ClientServerMessage implements Serializable {
     private String message;
     private Serializable content;
 
-    public ClientServerMessage(String message, Serializable content) {
+    public SocketMessage(String message, Serializable content) {
         this.message = message;
         this.content = content;
     }

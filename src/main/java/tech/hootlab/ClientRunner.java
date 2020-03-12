@@ -10,27 +10,24 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
 import tech.hootlab.client.ClientSettings;
-import tech.hootlab.core.Player;
-import tech.hootlab.server.ClientServerMessage;
+import tech.hootlab.server.SocketMessage;
 
 public class ClientRunner {
     // assumes the current class is called MyLogger
     private final static Logger LOGGER = Logger.getLogger(ClientRunner.class.getName());
 
     private Socket client;
-    private Set<ClientRunner> clientSet;
     private String clientID;
 
     private ClientReader clientReader;
     private ClientWriter clientWriter;
 
-    private GameController controller;
+    private ServerController controller;
 
     private boolean isConnected = true;
 
-    public ClientRunner(Socket client, Set<ClientRunner> clientSet, GameController controller) {
+    public ClientRunner(Socket client, ServerController controller) {
         this.controller = controller;
-        this.clientSet = clientSet;
 
         this.clientID = UUID.randomUUID().toString();
         this.client = client;
@@ -43,9 +40,9 @@ public class ClientRunner {
         Thread writeThread = new Thread(clientWriter);
         writeThread.start();
 
-        // Tell the player their ID so they can differentiate themselves
-        // #1 - This is the first stage in the 'connection'
-        sendMessage(new ClientServerMessage(ClientServerMessage.CONNECT, clientID));
+        // Tell the player their ID so they can differentiate themselves from other players they
+        // receive. #1 - This is the first stage in the 'connection'
+        sendMessage(new SocketMessage(SocketMessage.CONNECT, clientID));
 
     }
 
@@ -53,7 +50,7 @@ public class ClientRunner {
         return clientID;
     }
 
-    public void sendMessage(ClientServerMessage message) {
+    public void sendMessage(SocketMessage message) {
         clientWriter.sendMessage(message);
     }
 
@@ -78,13 +75,12 @@ public class ClientRunner {
         public void run() {
             while (isConnected) {
                 try {
-                    ClientServerMessage message = null;
+                    SocketMessage message = null;
 
-                    while ((message =
-                            (ClientServerMessage) objectInputStream.readObject()) != null) {
+                    while ((message = (SocketMessage) objectInputStream.readObject()) != null) {
 
                         switch (message.getMessage()) {
-                            case ClientServerMessage.CONNECT:
+                            case SocketMessage.CONNECT:
                                 // API CONTENT:
                                 // (ClientSettings) settings for the player (tokens and name)
                                 LOGGER.info("SET message received!");
@@ -94,22 +90,22 @@ public class ClientRunner {
 
                                 break;
 
-                            case ClientServerMessage.HIT:
+                            case SocketMessage.HIT:
                                 // API CONTENT:
                                 // (String) playerName
-                                controller.hit(clientID);
+                                controller.hit((String) clientID);
                                 break;
 
-                            case ClientServerMessage.STICK:
+                            case SocketMessage.STICK:
                                 // API CONTENT:
                                 // (String) playerName
-                                controller.stick(clientID);
+                                controller.stick((String) clientID);
                                 break;
 
-                            case ClientServerMessage.DEAL:
+                            case SocketMessage.DEAL:
                                 // API CONTENT:
                                 // (String) playerName
-                                controller.deal(clientID);
+                                controller.deal((String) clientID);
                                 break;
 
                             default:
@@ -139,7 +135,7 @@ public class ClientRunner {
     // Private class so we can access instance variables
     private class ClientWriter implements Runnable {
 
-        ConcurrentLinkedQueue<ClientServerMessage> messageQueue = new ConcurrentLinkedQueue<>();
+        ConcurrentLinkedQueue<SocketMessage> messageQueue = new ConcurrentLinkedQueue<>();
         ObjectOutputStream objectOutputStream;
 
         public ClientWriter() {
@@ -151,7 +147,7 @@ public class ClientRunner {
             }
         }
 
-        public void sendMessage(ClientServerMessage message) {
+        public void sendMessage(SocketMessage message) {
             messageQueue.add(message);
         }
 

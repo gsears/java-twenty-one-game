@@ -1,12 +1,14 @@
 package tech.hootlab.client;
 
 import java.awt.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import javax.swing.*;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import tech.hootlab.core.Player;
 
-public class PlayerInfoView extends JPanel {
+public class PlayerInfoView extends JPanel implements PropertyChangeListener {
     private static final long serialVersionUID = 1L;
 
     private static final int HORIZONTAL_PADDING = 10;
@@ -19,9 +21,7 @@ public class PlayerInfoView extends JPanel {
     private boolean isDealer = false;
     private Player player;
 
-    public PlayerInfoView(Player player) {
-        this.player = player;
-
+    public PlayerInfoView() {
         setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
 
         playerNameLabel = new JLabel();
@@ -36,6 +36,11 @@ public class PlayerInfoView extends JPanel {
         add(tokenCountLabel);
         add(Box.createRigidArea(new Dimension(HORIZONTAL_PADDING, 0)));
 
+    }
+
+    public void setPlayer(Player player) {
+        this.player = player;
+        player.addPropertyChangeListener(this);
     }
 
     public void render() {
@@ -85,6 +90,11 @@ public class PlayerInfoView extends JPanel {
             default:
                 break;
         }
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        render();
     }
 
 }

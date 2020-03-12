@@ -18,7 +18,7 @@ public class PlayerView extends JPanel {
         // Layout
         setLayout(new BorderLayout());
         playerHandView = new PlayerHandView(width, height);
-        playerInfoView = new PlayerInfoView(player);
+        playerInfoView = new PlayerInfoView();
 
         add(playerInfoView, BorderLayout.NORTH);
         add(playerHandView, BorderLayout.CENTER);
@@ -28,6 +28,7 @@ public class PlayerView extends JPanel {
 
     public void setPlayer(Player player) {
         this.player = player;
+        playerInfoView.setPlayer(player);
         render();
     }
 

@@ -8,7 +8,7 @@ import tech.hootlab.client.ClientSettings;
 import tech.hootlab.core.Player;
 import tech.hootlab.core.Round;
 import tech.hootlab.core.RoundState;
-import tech.hootlab.server.ClientServerMessage;
+import tech.hootlab.server.SocketMessage;
 
 /*
  * Game.java Gareth Sears - 2493194S
@@ -17,32 +17,31 @@ import tech.hootlab.server.ClientServerMessage;
 /**
  * A class representing the state of a game.
  */
-public class GameController implements PropertyChangeListener {
-    private final static Logger LOGGER = Logger.getLogger(GameController.class.getName());
+public class ServerController implements PropertyChangeListener {
+    private final static Logger LOGGER = Logger.getLogger(ServerController.class.getName());
 
     Set<ClientRunner> clientSet;
-    GameModel model;
+    ServerModel model;
 
-    public GameController(Set<ClientRunner> clientSet, GameModel model) {
+    public ServerController(Set<ClientRunner> clientSet, ServerModel model) {
         this.clientSet = clientSet;
         this.model = model;
     }
 
     // Players added and removed from the game should be added on next round.
     public synchronized void addPlayer(String clientID, ClientSettings settings) {
-        Player player = model.addPlayer(clientID, settings.getName());
-        player.setTokens(settings.getTokens());
+        Player player = model.addPlayer(clientID, settings.getName(), settings.getTokens());
         player.addPropertyChangeListener(this);
         LOGGER.info("Player added to model.");
         // Tell clients we've got a new player
-        sendMessage(new ClientServerMessage(ClientServerMessage.ADD_PLAYER, player));
+        sendMessage(new SocketMessage(SocketMessage.ADD_PLAYER, player));
     }
 
     // This will be called by the client on close
     public synchronized void removePlayer(String ID) {
         Player player = model.removePlayer(ID);
         LOGGER.info("Player removed from model.");
-        sendMessage(new ClientServerMessage(ClientServerMessage.REMOVE_PLAYER, player));
+        sendMessage(new SocketMessage(SocketMessage.REMOVE_PLAYER, player));
     }
 
     public void hit(String ID) {
@@ -111,7 +110,7 @@ public class GameController implements PropertyChangeListener {
         }
     }
 
-    private void sendMessage(ClientServerMessage messageObject) {
+    private void sendMessage(SocketMessage messageObject) {
         clientSet.forEach(client -> {
             client.sendMessage(messageObject);
         });
