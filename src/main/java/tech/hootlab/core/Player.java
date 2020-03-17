@@ -6,13 +6,17 @@ import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 public class Player implements PropertyChangeObservable, Serializable {
+    private static final long serialVersionUID = 1L;
+
+    private final static Logger LOGGER = Logger.getLogger(Player.class.getName());
 
     private String ID;
     private String name;
     private int tokens;
-    private Hand hand = new Hand(); // Initialise with empty hand.
+    private Hand hand;
     private PlayerState status = PlayerState.WAITING;
 
     // Observable attributes
@@ -29,6 +33,7 @@ public class Player implements PropertyChangeObservable, Serializable {
         this.ID = ID;
         this.name = name;
         this.tokens = initialTokens;
+        this.hand = new Hand();
         propertyChangeSupport = new PropertyChangeSupport(this);
     }
 
@@ -51,8 +56,14 @@ public class Player implements PropertyChangeObservable, Serializable {
     public void addCardToHand(Card card) {
         List<Card> previousCards = new LinkedList<>(hand.getCardList());
         hand.add(card);
+
+        LOGGER.info("Adding card: " + card);
         propertyChangeSupport.firePropertyChange(HAND_CHANGE_EVENT, previousCards,
                 hand.getCardList());
+
+
+        LOGGER.info(String.format("PropChangeSupport should have fired: %s, %s", previousCards,
+                hand.getCardList()));
     }
 
     public void clearHand() {

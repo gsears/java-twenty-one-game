@@ -3,8 +3,8 @@ package tech.hootlab;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 public class Server implements Runnable {
@@ -13,15 +13,18 @@ public class Server implements Runnable {
     public static final int SERVER_SOCKET = 8765;
 
     private ServerSocket server;
-    private Set<ClientRunner> clientSet = new HashSet<>();
+    private Map<String, SocketMessageSender> clientMap = new HashMap<>();
 
     // Game items
     private ServerController controller;
 
     public Server() {
         LOGGER.info("Initialising new server");
-        controller = new ServerController(clientSet, new ServerModel());
+        controller = new ServerController(clientMap, new ServerModel());
+        connect();
+    }
 
+    private void connect() {
         try {
             LOGGER.info("Creating server socket");
             server = new ServerSocket(SERVER_SOCKET);
@@ -41,8 +44,8 @@ public class Server implements Runnable {
                 ClientRunner client = new ClientRunner(clientSocket, controller);
                 LOGGER.info("ClientRunner created with ID: " + client);
 
-                clientSet.add(client);
-                LOGGER.info("Current client set: " + clientSet);
+                clientMap.put(client.getID(), client);
+                LOGGER.info("Current client set: " + clientMap.keySet());
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -61,6 +64,4 @@ public class Server implements Runnable {
             e.printStackTrace();
         }
     }
-
-
 }

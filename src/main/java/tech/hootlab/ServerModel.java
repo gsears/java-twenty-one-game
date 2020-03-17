@@ -1,11 +1,10 @@
 package tech.hootlab;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.logging.Logger;
 import tech.hootlab.core.Player;
 import tech.hootlab.core.Round;
-import tech.hootlab.core.RoundState;
 
 /*
  * Game.java Gareth Sears - 2493194S
@@ -19,76 +18,67 @@ public class ServerModel {
 
     public final int STAKE = 20;
 
-    Map<String, Player> playerMap = new HashMap<>();
-    Round round;
+    List<Player> playerList = new LinkedList<>();
+    Round round = new Round();
     Player dealer;
 
+    public List<Player> getPlayerList() {
+        return playerList;
+    }
+
+    public Round getRound() {
+        return round;
+    }
+
+    public void startNextRound() {
+        round.reset(new LinkedList<>(playerList), dealer, STAKE);
+    }
+
+    public Player getDealer() {
+        return dealer;
+    }
+
     // Players added and removed from the game should be added on next round.
-    public Player addPlayer(String ID, String playerName, int tokens) {
-        Player player = new Player(ID, playerName, tokens);
-        playerMap.put(ID, player);
+    public void addPlayer(Player player) {
+        playerList.add(player);
+        LOGGER.info("Player added: " + player);
 
         // If it's the first player, they're the dealer!
-        if (playerMap.size() == 1) {
+        if (playerList.size() == 1) {
             setDealer(player);
         }
 
-        LOGGER.info("Player added: " + player);
-        LOGGER.info("Dealer is: " + dealer);
-
-        return player;
+        // We've got enough players to play
+        if (playerList.size() == 2) {
+            LOGGER.info("We have two players");
+            startNextRound();
+        }
     }
 
-    // This will be called by the client on close
-    public Player removePlayer(String ID) {
-        Player player = playerMap.get(ID);
-        return removePlayer(player);
+    public void removePlayer(String ID) {
+        for (Player player : playerList) {
+            if (player.getID().equals(ID)) {
+                removePlayer(player);
+            }
+        }
     }
 
-    // This will be called by the server, on deadbeat-has-no-money-left.
-    public Player removePlayer(Player player) {
+    public void removePlayer(Player player) {
         LOGGER.info("Removing player: " + player);
-        playerMap.remove(player.getID());
+        playerList.remove(player);
 
-        if (dealer.equals(player) && playerMap.size() > 0) {
+        if (dealer.equals(player) && playerList.size() > 0) {
             LOGGER.info("Player was dealer, assigning new dealer... ");
-            // Assign dealer to first player in map
-            setDealer(playerMap.values().iterator().next());
+            setDealer(playerList.get(0));
         }
 
         if (round != null) {
-            // Keeps the player 'in game' for points reasons before removing them at the end of the
-            // round
-            round.removePlayer(player);
+            round.removePlayer(player); // Handled separately for scoring and logic reasons
         }
-        return player;
     }
 
     private void setDealer(Player player) {
         dealer = player;
         LOGGER.info("Dealer set to: " + player);
     }
-
-    private void handleRoundChange(RoundState roundState) {
-        switch (roundState) {
-            case READY:
-                // Populate client views in player order
-                // Notify dealer to deal
-                break;
-
-            case IN_PROGRESS:
-                // Doesn't do much...I don't think...
-                break;
-
-            case FINISHED:
-                // TODO: Need to pause here somehow...
-                // round.getDealer();
-                break;
-
-            default:
-                break;
-        }
-    }
-
-
 }

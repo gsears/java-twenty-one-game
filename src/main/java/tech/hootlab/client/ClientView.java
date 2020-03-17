@@ -18,7 +18,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import tech.hootlab.core.Player;
 
-public class ClientView extends JFrame implements PropertyChangeListener {
+public class ClientView extends JFrame {
     private static final long serialVersionUID = 1L;
 
     private final static Logger LOGGER = Logger.getLogger(ClientView.class.getName());
@@ -28,28 +28,30 @@ public class ClientView extends JFrame implements PropertyChangeListener {
     private static final int WINDOW_HEIGHT = 800;
 
     private JPanel gamePanel;
+    private JScrollPane gameContainer;
     private Map<String, PlayerView> playerViewMap = new HashMap<>();
 
+    private JPanel userPanel;
     private PlayerView userView;
     private PlayerControlView userControlView;
 
-    public ClientView(ClientModel model, ClientController controller) {
+    public ClientView(ClientController controller) {
         // Listen for model property changes
-        synchronized (this) {
-            model.addPropertyChangeListener(this);
-        }
+
+        // model.addPropertyChangeListener(this);
+
 
 
         // Create a panel for storing other players
         gamePanel = new JPanel();
         gamePanel.setLayout(new BoxLayout(gamePanel, BoxLayout.PAGE_AXIS));
 
-        JScrollPane gameContainer = new JScrollPane(gamePanel);
+        gameContainer = new JScrollPane(gamePanel);
         gameContainer.getViewport().setPreferredSize(
                 new Dimension(WINDOW_WIDTH, WINDOW_HEIGHT - PLAYER_SECTION_HEIGHT));
 
         // Create a panel for storing user
-        JPanel userPanel = new JPanel(new BorderLayout());
+        userPanel = new JPanel(new BorderLayout());
         userPanel.setMinimumSize(new Dimension(WINDOW_WIDTH, PLAYER_SECTION_HEIGHT));
 
         userView = new PlayerView(null, WINDOW_WIDTH, PLAYER_SECTION_HEIGHT);
@@ -76,19 +78,34 @@ public class ClientView extends JFrame implements PropertyChangeListener {
     public void setUser(Player player) {
         userView.setPlayer(player);
         playerViewMap.put(player.getID(), userView);
+        userPanel.repaint();
+        userPanel.revalidate();
     }
 
     public void addPlayer(Player player) {
-        PlayerView playerView = new PlayerView(player, WINDOW_WIDTH, WINDOW_HEIGHT);
+        LOGGER.info("Adding player: " + player);
+        PlayerView playerView = new PlayerView(player, WINDOW_WIDTH, PLAYER_SECTION_HEIGHT);
         playerViewMap.put(player.getID(), playerView);
         gamePanel.add(playerView);
+        gamePanel.repaint();
+        gamePanel.validate();
     }
 
-    public void removePlayer(Player player) {
-        String playerID = player.getID();
-        PlayerView playerView = playerViewMap.get(playerID);
-        gamePanel.remove(playerView);
-        playerViewMap.remove(playerID);
+    public void clearPlayers() {
+        for (PlayerView playerView : playerViewMap.values()) {
+            gamePanel.remove(playerView);
+        }
+        gamePanel.repaint();
+        gamePanel.revalidate();
+    }
+
+    public void updateHand(Player player) {
+        LOGGER.info("Updating player hand: " + player);
+        PlayerView playerView = playerViewMap.get(player.getID());
+        playerView.setHand(player.getHand());
+        gamePanel.repaint();
+        gamePanel.revalidate();
+
     }
 
     public void setDealer(Player player) {
@@ -107,6 +124,26 @@ public class ClientView extends JFrame implements PropertyChangeListener {
         }
     }
 
+    public void setDealerControl() {
+        userControlView.enableDealButton();
+    }
+
+    public void setPlayerControl() {
+        userControlView.enablePlayButtons();
+    }
+
+    public void disableControl() {
+        userControlView.disableButtons();
+    }
+
+    public void displayMessage(String message) {
+        userControlView.displayMessage(message);
+    }
+
+    public void clearMessage() {
+        userControlView.clearMessage();
+    }
+
     public void setCurrentPlayer(Player player) {
         String playerID = player.getID();
 
@@ -123,39 +160,39 @@ public class ClientView extends JFrame implements PropertyChangeListener {
         }
     }
 
-    @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-        System.out.println("Property Change");
-        // Will always be a player
-        Object val = evt.getNewValue();
-        Player player = (Player) val;
-        LOGGER.info("Property Change Event: " + player);
+    // @Override
+    // public void propertyChange(PropertyChangeEvent evt) {
+    // System.out.println("Property Change");
+    // // Will always be a player
+    // Object val = evt.getNewValue();
+    // Player player = (Player) val;
+    // LOGGER.info("Property Change Event: " + player);
 
-        switch (evt.getPropertyName()) {
-            case ClientModel.USER_CHANGE_EVENT:
-                LOGGER.info("User Change Event");
-                setUser(player);
-                break;
+    // switch (evt.getPropertyName()) {
+    // case ClientModel.USER_CHANGE_EVENT:
+    // LOGGER.info("User Change Event");
+    // setUser(player);
+    // break;
 
-            case ClientModel.PLAYER_ADD_EVENT:
-                addPlayer(player);
-                break;
+    // case ClientModel.PLAYER_ADD_EVENT:
+    // addPlayer(player);
+    // break;
 
-            case ClientModel.PLAYER_REMOVE_EVENT:
-                removePlayer(player);
-                break;
+    // case ClientModel.PLAYER_REMOVE_EVENT:
+    // removePlayer(player);
+    // break;
 
-            case ClientModel.DEALER_CHANGE_EVENT:
-                setDealer(player);
+    // case ClientModel.DEALER_CHANGE_EVENT:
+    // setDealer(player);
 
-            case ClientModel.CURRENT_PLAYER_CHANGE_EVENT:
-                setCurrentPlayer(player);
+    // case ClientModel.CURRENT_PLAYER_CHANGE_EVENT:
+    // setCurrentPlayer(player);
 
-            default:
-                break;
-        }
+    // default:
+    // break;
+    // }
 
-    }
+    // }
 
 
 

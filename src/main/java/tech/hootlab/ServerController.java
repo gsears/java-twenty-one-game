@@ -2,59 +2,76 @@ package tech.hootlab;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.util.Set;
+import java.io.Serializable;
+import java.util.LinkedList;
+import java.util.Map;
 import java.util.logging.Logger;
 import tech.hootlab.client.ClientSettings;
 import tech.hootlab.core.Player;
 import tech.hootlab.core.Round;
 import tech.hootlab.core.RoundState;
-import tech.hootlab.server.SocketMessage;
 
-/*
- * Game.java Gareth Sears - 2493194S
- */
-
-/**
- * A class representing the state of a game.
- */
 public class ServerController implements PropertyChangeListener {
-    private final static Logger LOGGER = Logger.getLogger(ServerController.class.getName());
+    private final static Logger LOGGER = Logger.getLogger(ServerModel.class.getName());
 
-    Set<ClientRunner> clientSet;
+    // For propagating messages to all clients
+    Map<String, SocketMessageSender> clientMap;
     ServerModel model;
+    Round round;
 
-    public ServerController(Set<ClientRunner> clientSet, ServerModel model) {
-        this.clientSet = clientSet;
+    public ServerController(Map<String, SocketMessageSender> clientMap, ServerModel model) {
+        this.clientMap = clientMap;
         this.model = model;
+
+        // Listen to round changes to propogate to clients
+        round = model.getRound();
+        round.addPropertyChangeListener(this);
     }
 
-    // Players added and removed from the game should be added on next round.
     public synchronized void addPlayer(String clientID, ClientSettings settings) {
-        Player player = model.addPlayer(clientID, settings.getName(), settings.getTokens());
+        // Create player and listen for changes to propogate to clients
+        Player player = new Player(clientID, settings.getName(), settings.getTokens());
         player.addPropertyChangeListener(this);
-        LOGGER.info("Player added to model.");
-        // Tell clients we've got a new player
-        sendMessage(new SocketMessage(SocketMessage.ADD_PLAYER, player));
+
+        // Tell other players a new player has entered.
+        sendMessageToAll(SocketMessage.ADD_PLAYER, player);
+        // Send the client their player object.
+        sendMessage(clientID, SocketMessage.SET_USER, player);
+        // Send the client a list of the current players so they can spectate round in progress
+        sendMessage(clientID, SocketMessage.SET_PLAYERS,
+                (LinkedList<Player>) round.getPlayerList());
+
+        model.addPlayer(player);
+
+
     }
 
     // This will be called by the client on close
-    public synchronized void removePlayer(String ID) {
-        Player player = model.removePlayer(ID);
-        LOGGER.info("Player removed from model.");
-        sendMessage(new SocketMessage(SocketMessage.REMOVE_PLAYER, player));
+    public synchronized void removePlayer(String clientID) {
+        model.removePlayer(clientID);
+        clientMap.remove(clientID);
+        sendMessageToAll(SocketMessage.REMOVE_PLAYER, clientID);
+    }
+
+    public void newRoundMessage() {
+        sendMessageToAll(SocketMessage.SET_PLAYERS, (LinkedList<Player>) round.getPlayerList());
+        sendMessageToAll(SocketMessage.NEW_ROUND, model.getDealer());
     }
 
     public void hit(String ID) {
-        LOGGER.info("Hit()");
+        round.hitWithCurrentPlayer();
     }
 
     public void stick(String ID) {
-        LOGGER.info("Stick()");
+        round.stickWithCurrentPlayer();
     }
 
     public void deal(String ID) {
-        LOGGER.info("Deal()");
+        LOGGER.info("Deal message received");
+        round.start();
     }
+
+    // TODO: Deal with property changes in a more systematic fashion
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
@@ -62,26 +79,29 @@ public class ServerController implements PropertyChangeListener {
 
             // Player Events
             case Player.HAND_CHANGE_EVENT:
-                // Serialise and send
+                LOGGER.info("Received HAND_CHANGE event: "
+                        + ((Player) evt.getSource()).getHand().getCardList());
+                sendMessageToAll(SocketMessage.HAND_UPDATE, (Player) evt.getSource());
                 break;
 
             case Player.STATUS_CHANGE_EVENT:
-                // Serialise and send
+                sendMessageToAll(SocketMessage.PLAYER_CHANGE, (Player) evt.getSource());
                 break;
 
             case Player.TOKEN_CHANGE_EVENT:
-                // Serialise and send
+                sendMessageToAll(SocketMessage.PLAYER_CHANGE, (Player) evt.getSource());
                 break;
 
             case Round.CURRENT_PLAYER_CHANGE_EVENT:
-                // Serialise and send
+                sendMessageToAll(SocketMessage.PLAYER_CHANGE, (Player) evt.getNewValue());
+                break;
+
+            case Round.DEALER_CHANGE_EVENT:
+                sendMessageToAll(SocketMessage.PLAYER_CHANGE, (Player) evt.getNewValue());
                 break;
 
             case Round.STATE_CHANGE_EVENT:
-                // Controller
                 handleRoundChange((RoundState) evt.getNewValue());
-                // Serialise and send to clients
-
                 break;
 
             default:
@@ -90,19 +110,18 @@ public class ServerController implements PropertyChangeListener {
     }
 
     private void handleRoundChange(RoundState roundState) {
+        LOGGER.info("Received roundState event: " + roundState);
         switch (roundState) {
             case READY:
-                // Populate client views in player order
-                // Notify dealer to deal
+                newRoundMessage();
                 break;
 
             case IN_PROGRESS:
-                // Doesn't do much...I don't think...
+
                 break;
 
             case FINISHED:
-                // TODO: Need to pause here somehow...
-                // round.getDealer();
+
                 break;
 
             default:
@@ -110,10 +129,22 @@ public class ServerController implements PropertyChangeListener {
         }
     }
 
-    private void sendMessage(SocketMessage messageObject) {
-        clientSet.forEach(client -> {
+    private void sendMessageToAll(String message, Serializable payload) {
+        sendMessageToAll(new SocketMessage(message, payload));
+    }
+
+    private void sendMessageToAll(SocketMessage messageObject) {
+        clientMap.values().forEach(client -> {
             client.sendMessage(messageObject);
         });
+    }
+
+    private void sendMessage(String ID, String message, Serializable payload) {
+        sendMessage(ID, new SocketMessage(message, payload));
+    }
+
+    private void sendMessage(String ID, SocketMessage messageObject) {
+        clientMap.get(ID).sendMessage(messageObject);
     }
 
 }

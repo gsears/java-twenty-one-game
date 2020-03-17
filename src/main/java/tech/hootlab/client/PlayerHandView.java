@@ -3,14 +3,10 @@ package tech.hootlab.client;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Point;
-
-import javax.swing.JFrame;
+import java.util.logging.Logger;
 import javax.swing.JLayeredPane;
-
 import tech.hootlab.core.Card;
 import tech.hootlab.core.Hand;
-import tech.hootlab.core.CardRanks;
-import tech.hootlab.core.CardSuits;
 
 /**
  * A class which displays a hand on the player's 'table'.
@@ -20,6 +16,8 @@ import tech.hootlab.core.CardSuits;
  */
 public class PlayerHandView extends JLayeredPane {
     private static final long serialVersionUID = 1L;
+
+    private final static Logger LOGGER = Logger.getLogger(PlayerHandView.class.getName());
 
     final private Color DARK_GREEN = new Color(0, 153, 0);
 
@@ -49,6 +47,7 @@ public class PlayerHandView extends JLayeredPane {
     public PlayerHandView(int width, int height) {
         setOpaque(true);
         setPreferredSize(new Dimension(width, height));
+        setMaximumSize(new Dimension(width, height));
         setBackground(DARK_GREEN);
 
         // Width - max number of cards in a hand is 11 (4*A, 4*2, 3*3).
@@ -65,13 +64,16 @@ public class PlayerHandView extends JLayeredPane {
     }
 
     public void setHand(Hand hand) {
+        LOGGER.info("Setting hand, with cards:" + hand.getCardList());
         clearCards();
+
         hand.getCardList().stream().forEach(card -> {
             addCard(card);
         });
     }
 
     private void addCard(Card card) {
+        LOGGER.info("Adding card");
         CardView cardView = new CardView(card);
         int cardWidth = 2 * widthOffsetUnit;
 
@@ -82,6 +84,7 @@ public class PlayerHandView extends JLayeredPane {
 
         // Repaint to make sure display is updated.
         repaint();
+        revalidate();
 
         // The next card overlaps on top
         cardDepth++;
@@ -93,10 +96,12 @@ public class PlayerHandView extends JLayeredPane {
      * Removes the cards in a player's hand.
      */
     private void clearCards() {
+        LOGGER.info("Clearing cards");
         // Reset the offset.
         offset = new Point(widthOffsetUnit, heightOffsetUnit);
         removeAll();
         repaint();
+        revalidate();
     }
 
     // public static void main(String[] args) {

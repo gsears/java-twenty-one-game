@@ -1,5 +1,6 @@
 package tech.hootlab.client;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -8,23 +9,24 @@ import java.net.Socket;
 import java.util.List;
 import java.util.logging.Logger;
 import javax.swing.SwingWorker;
+import tech.hootlab.SocketMessage;
 import tech.hootlab.core.Hand;
 import tech.hootlab.core.Player;
-import tech.hootlab.server.SocketMessage;
 
 public class ClientController {
     private final static Logger LOGGER = Logger.getLogger(ClientController.class.getName());
 
     private String userID;
     private ClientSettings clientSettings;
-    private ClientModel model;
     private ClientView view;
+    private Socket server;
 
     private ObjectOutputStream objectOutputStream;
 
-    public ClientController(ClientModel model, Socket server, ClientSettings clientSettings) {
-        this.model = model;
+    public ClientController(Socket server, ClientSettings clientSettings) {
+
         this.clientSettings = clientSettings;
+        this.server = server;
 
         // For writing messages from action events (short enough to not need a thread)
         try {
@@ -32,11 +34,6 @@ public class ClientController {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-
-
-        // Connect with user settings
-
     }
 
     public void setView(ClientView view) {
@@ -64,6 +61,9 @@ public class ClientController {
                 while ((message = (SocketMessage) inputStream.readObject()) != null) {
                     publish(message);
                 }
+            } catch (EOFException e) {
+                LOGGER.warning("SERVER DISCONNECTED");
+                quit();
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             } catch (IOException e) {
@@ -74,49 +74,71 @@ public class ClientController {
 
         protected void process(List<SocketMessage> messageList) {
             LOGGER.info("Processing message: " + messageList);
-            // Pop last message
-            SocketMessage message = messageList.get(messageList.size() - 1);
+            // process all messages
+            for (SocketMessage message : messageList) {
+                switch (message.getMessage()) {
+                    case SocketMessage.CONNECT:
+                        LOGGER.info("Received CONNECT message");
+                        // Set the user player
+                        connect((String) message.getContent());
+                        break;
 
-            switch (message.getMessage()) {
-                case SocketMessage.CONNECT:
-                    // #2 - Second stage of connection, set the ID here
-                    connect((String) message.getContent());
-                    break;
+                    case SocketMessage.SET_USER:
+                        LOGGER.info("Received SET_USER message");
+                        setUser((Player) message.getContent());
+                        break;
 
-                case SocketMessage.ADD_PLAYER:
-                    addPlayer((Player) message.getContent());
-                    break;
+                    case SocketMessage.NEW_ROUND:
+                        LOGGER.info("Received NEW_ROUND message");
+                        setDealer((Player) message.getContent());
 
-                case SocketMessage.REMOVE_PLAYER:
-                    removePlayer((Player) message.getContent());
-                    break;
+                        break;
 
-                default:
-                    break;
+                    case SocketMessage.SET_PLAYERS:
+                        LOGGER.info("Received SET_PLAYERS message");
+                        updatePlayers((List<Player>) message.getContent());
+                        break;
+
+                    case SocketMessage.HAND_UPDATE:
+                        LOGGER.info("Received HAND_UPDATE message");
+                        updateHand((Player) message.getContent());
+                        break;
+
+                    default:
+                        break;
+                }
             }
         }
     }
 
-    private synchronized void connect(String userID) {
-        this.userID = userID;
+    private void connect(String clientID) {
+        this.userID = clientID;
         LOGGER.info("Sending settings to server...");
         sendMessage(SocketMessage.CONNECT, clientSettings);
     }
 
-    private void addPlayer(Player player) {
-        if (player.getID().equals(userID)) {
-            view.setUser(player);
-        } else {
-            view.addPlayer(player);
+    private void setUser(Player userPlayer) {
+        view.setUser(userPlayer);
+        view.displayMessage("Waiting for next round to begin...");
+    }
+
+    private void updatePlayers(List<Player> playerList) {
+        view.clearPlayers();
+        for (Player player : playerList) {
+            addPlayer(player);
         }
     }
 
-    private synchronized void removePlayer(Player player) {
-        if (player.getID().equals(userID)) {
-            // You've been kicked out for being too poor, you deadbeat.
-            quit();
-        } else {
-            view.removePlayer(player);
+    private void updateHand(Player player) {
+        LOGGER.info("Player's hand to update: " + player.getID());
+        LOGGER.info("Hand value: " + player.getHandValue());
+        LOGGER.info("Update hand with: " + player.getHand().getCardList());
+        view.updateHand(player);
+    }
+
+    private void addPlayer(Player player) {
+        if (!userID.equals(player.getID())) {
+            view.addPlayer(player);
         }
     }
 
@@ -131,12 +153,18 @@ public class ClientController {
 
 
     public void setDealer(Player player) {
-        model.setDealer(player);
+        view.setDealer(player);
+
+        if (player.getID().equals(userID)) {
+            view.setDealerControl();
+        } else {
+            view.disableControl();
+        }
+
+        view.displayMessage("NEW ROUND: Waiting for dealer to DEAL!");
     }
 
-    public void setCurrentPlayer(Player player) {
-        model.setCurrentPlayer(player);
-    }
+
 
     // Messages to server
     public void disconnect() {

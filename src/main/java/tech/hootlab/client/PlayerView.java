@@ -1,7 +1,8 @@
 package tech.hootlab.client;
 
-import java.awt.*;
-import javax.swing.*;
+import java.awt.BorderLayout;
+import javax.swing.JPanel;
+import tech.hootlab.core.Hand;
 import tech.hootlab.core.Player;
 
 public class PlayerView extends JPanel {
@@ -18,18 +19,22 @@ public class PlayerView extends JPanel {
         // Layout
         setLayout(new BorderLayout());
         playerHandView = new PlayerHandView(width, height);
-        playerInfoView = new PlayerInfoView();
+        playerInfoView = new PlayerInfoView(player, width);
 
         add(playerInfoView, BorderLayout.NORTH);
         add(playerHandView, BorderLayout.CENTER);
 
-        render();
+        playerInfoView.setPlayer(player);
     }
 
     public void setPlayer(Player player) {
         this.player = player;
         playerInfoView.setPlayer(player);
         render();
+    }
+
+    public void setHand(Hand hand) {
+        playerHandView.setHand(hand);
     }
 
     public void setCurrentPlayer(boolean isCurrentPlayer) {

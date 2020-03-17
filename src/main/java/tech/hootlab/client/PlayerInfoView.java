@@ -11,6 +11,7 @@ import tech.hootlab.core.Player;
 public class PlayerInfoView extends JPanel implements PropertyChangeListener {
     private static final long serialVersionUID = 1L;
 
+    private static final int MINIMUM_HEIGHT = 20;
     private static final int HORIZONTAL_PADDING = 10;
 
     private JLabel playerNameLabel;
@@ -21,7 +22,11 @@ public class PlayerInfoView extends JPanel implements PropertyChangeListener {
     private boolean isDealer = false;
     private Player player;
 
-    public PlayerInfoView() {
+    public PlayerInfoView(Player player, int width) {
+        this.player = player;
+
+        setPreferredSize(new Dimension(width, MINIMUM_HEIGHT));
+
         setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
 
         playerNameLabel = new JLabel();
@@ -36,17 +41,25 @@ public class PlayerInfoView extends JPanel implements PropertyChangeListener {
         add(tokenCountLabel);
         add(Box.createRigidArea(new Dimension(HORIZONTAL_PADDING, 0)));
 
+        render();
+
     }
 
     public void setPlayer(Player player) {
-        this.player = player;
-        player.addPropertyChangeListener(this);
+        if (player != null) {
+            this.player = player;
+            player.addPropertyChangeListener(this);
+        }
     }
 
     public void render() {
-        setName();
-        setTokens();
-        setState();
+        if (player != null) {
+            setName();
+            setTokens();
+            setState();
+            repaint();
+            revalidate();
+        }
     }
 
     public void setDealer(boolean isDealer) {

@@ -5,8 +5,10 @@ import java.beans.PropertyChangeSupport;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class Round implements PropertyChangeObservable {
+    private final static Logger LOGGER = Logger.getLogger(Round.class.getName());
 
     private static final int HAND_MAXIMUM = 21;
     private static final int NUM_DEALT_CARDS = 2;
@@ -18,7 +20,7 @@ public class Round implements PropertyChangeObservable {
     private PropertyChangeSupport propertyChangeSupport;
 
     private List<Player> removedPlayerList = new LinkedList<>();
-    private List<Player> playerList;
+    private List<Player> playerList = new LinkedList<>();
     private RoundState state;
     private Player dealer;
     private Player currentPlayer;
@@ -26,27 +28,32 @@ public class Round implements PropertyChangeObservable {
     private int stake;
     private Deck deck;
 
-    Round(List<Player> initialPlayerList, Player dealer, int stake) {
+    public Round() {
+        propertyChangeSupport = new PropertyChangeSupport(this);
+    }
 
+    public void reset(List<Player> initialPlayerList, Player dealer, int stake) {
+        LOGGER.info("Round reset");
         this.dealer = dealer;
         this.stake = stake;
         this.playerList = initPlayerList(initialPlayerList);
         this.playerTurnIterator = playerList.iterator();
-
         // No initial player (may not get a turn if natural 21)
         this.currentPlayer = null;
-
         this.deck = Deck.getStandardDeck().shuffle();
-
         setState(RoundState.READY);
     }
 
-
     // Start the round
     public void start() {
+        LOGGER.info("Round started");
         deal();
         setState(RoundState.IN_PROGRESS);
         checkForDealWinners();
+    }
+
+    public List<Player> getPlayerList() {
+        return playerList;
     }
 
     public void removePlayer(Player player) {
@@ -56,6 +63,10 @@ public class Round implements PropertyChangeObservable {
         // If player is current player, skip them.
         if (player.equals(currentPlayer)) {
             setNextPlayer();
+        }
+        if (player.equals(dealer) && state == RoundState.READY) {
+            // Force deal to start if the dealer leaves before the game is started
+            start();
         } else {
             removedPlayerList.add(player);
         }
@@ -138,12 +149,14 @@ public class Round implements PropertyChangeObservable {
     }
 
     private void deal() {
+        LOGGER.info("Dealing...");
         for (Player player : playerList) {
             // Two cards each is standard...
             for (int i = 0; i < NUM_DEALT_CARDS; i++) {
                 Card card = deck.deal();
-                Hand playerHand = player.getHand();
-                playerHand.add(card);
+                LOGGER.info("Card dealt: " + card);
+                player.addCardToHand(card);
+
             }
         }
     }

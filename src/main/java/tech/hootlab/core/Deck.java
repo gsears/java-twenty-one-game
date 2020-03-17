@@ -1,5 +1,6 @@
 package tech.hootlab.core;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -12,7 +13,9 @@ import java.util.List;
  * A class representing a collection of cards. Note: this doesn't necessarily mean the full '52'
  * cards, rather a 'collection' of cards of any size.
  */
-public class Deck {
+public class Deck implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     // Define as linked list so we can use list (shuffle) and queue (poll) functionality.
     LinkedList<Card> cardList = new LinkedList<>();
 
@@ -32,7 +35,13 @@ public class Deck {
         return deck;
     }
 
-    public List<Card> getCardList() {
+    /**
+     * Get a list of the cards. This has to return a linked list for serializability (was previously
+     * getting blank lists on the receiving end).
+     *
+     * @return a linked list of the cards
+     */
+    public LinkedList<Card> getCardList() {
         return cardList;
     }
 

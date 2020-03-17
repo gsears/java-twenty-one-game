@@ -1,5 +1,7 @@
 package tech.hootlab.core;
 
+import java.io.Serializable;
+
 /*
  * Card.java Gareth Sears - 2493194S
  */
@@ -7,7 +9,8 @@ package tech.hootlab.core;
 /**
  * A class representing a playing card.
  */
-public class Card {
+public class Card implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private CardSuits suit;
     private CardRanks rank;
@@ -25,4 +28,9 @@ public class Card {
         return rank;
     }
 
+    @Override
+    public String toString() {
+        // TODO Auto-generated method stub
+        return String.format("{%s of %s}", rank, suit);
+    }
 }

@@ -5,14 +5,12 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
 import tech.hootlab.client.ClientSettings;
-import tech.hootlab.server.SocketMessage;
 
-public class ClientRunner {
+public class ClientRunner implements SocketMessageSender {
     // assumes the current class is called MyLogger
     private final static Logger LOGGER = Logger.getLogger(ClientRunner.class.getName());
 
@@ -28,7 +26,6 @@ public class ClientRunner {
 
     public ClientRunner(Socket client, ServerController controller) {
         this.controller = controller;
-
         this.clientID = UUID.randomUUID().toString();
         this.client = client;
 
@@ -40,10 +37,8 @@ public class ClientRunner {
         Thread writeThread = new Thread(clientWriter);
         writeThread.start();
 
-        // Tell the player their ID so they can differentiate themselves from other players they
-        // receive. #1 - This is the first stage in the 'connection'
+        // Send the client their ID
         sendMessage(new SocketMessage(SocketMessage.CONNECT, clientID));
-
     }
 
     public String getID() {
@@ -55,7 +50,7 @@ public class ClientRunner {
     }
 
     public void disconnect() {
-        LOGGER.info("disconnect()");
+        LOGGER.info(clientID + " has disconnected.");
         isConnected = false;
     }
 
@@ -78,16 +73,12 @@ public class ClientRunner {
                     SocketMessage message = null;
 
                     while ((message = (SocketMessage) objectInputStream.readObject()) != null) {
-
                         switch (message.getMessage()) {
-                            case SocketMessage.CONNECT:
-                                // API CONTENT:
-                                // (ClientSettings) settings for the player (tokens and name)
-                                LOGGER.info("SET message received!");
 
+                            // Player has passed their settings.
+                            case SocketMessage.CONNECT:
                                 controller.addPlayer(clientID,
                                         (ClientSettings) message.getContent());
-
                                 break;
 
                             case SocketMessage.HIT:
@@ -116,8 +107,6 @@ public class ClientRunner {
                     objectInputStream.close();
 
                 } catch (EOFException e) {
-                    // Disconnect the player
-                    LOGGER.warning(clientID + " has disconnected");
                     disconnect();
                     controller.removePlayer(clientID);
 
@@ -126,7 +115,6 @@ public class ClientRunner {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-
             }
         }
     }
@@ -156,15 +144,17 @@ public class ClientRunner {
             while (isConnected) {
                 try {
                     if (!messageQueue.isEmpty()) {
+
                         objectOutputStream.writeObject(messageQueue.poll());
+                        // Reset to avoid caching, as we're sending the same references which may
+                        // change internally.
+                        objectOutputStream.reset();
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-
             }
         }
-
     }
 
     @Override
