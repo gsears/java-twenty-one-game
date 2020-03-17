@@ -10,18 +10,19 @@ import java.util.List;
  */
 
 /**
- * A class representing a collection of cards. Note: this doesn't necessarily mean the full '52'
- * cards, rather a 'collection' of cards of any size.
+ * A class representing a collection of cards. Note: this doesn't necessarily
+ * mean the full '52' cards, rather a 'collection' of cards of any size.
  */
 public class Deck implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    // Define as linked list so we can use list (shuffle) and queue (poll) functionality.
+    // Define as linked list so we can use list (shuffle) and queue (poll)
+    // functionality.
     LinkedList<Card> cardList = new LinkedList<>();
 
     /**
-     * A static utility method for getting your bog-standard deck of cards from the ranks and suits
-     * provided.
+     * A static utility method for getting your bog-standard deck of cards from the
+     * ranks and suits provided.
      *
      * @return
      */
@@ -36,12 +37,12 @@ public class Deck implements Serializable {
     }
 
     /**
-     * Get a list of the cards. This has to return a linked list for serializability (was previously
-     * getting blank lists on the receiving end).
+     * Get a list of the cards. This has to return a linked list for serializability
+     * (was previously getting blank lists on the receiving end).
      *
      * @return a linked list of the cards
      */
-    public LinkedList<Card> getCardList() {
+    public List<Card> getCardList() {
         return cardList;
     }
 
