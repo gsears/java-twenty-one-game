@@ -3,6 +3,7 @@ package tech.hootlab;
 import java.io.Serializable;
 
 public class SocketMessage implements Serializable {
+
     private static final long serialVersionUID = 1L;
 
     public static final String CONNECT = "CONNECT";
@@ -16,8 +17,14 @@ public class SocketMessage implements Serializable {
     public static final String DISCONNECT = "DISCONNECT";
 
     public static final String HAND_UPDATE = "HAND_UPDATE";
+    public static final String TOKEN_UPDATE = "TOKEN_UPDATE";
+    public static final String STATUS_UPDATE = "STATUS_UPDATE";
 
-    public static final String NEW_ROUND = "NEW_ROUND";
+    public static final String ROUND_STARTED = "ROUND_STARTED";
+    public static final String ROUND_PLAYER_CHANGE = "ROUND_PLAYER_CHANGE";
+    public static final String ROUND_IN_PROGRESS = "ROUND_IN_PROGRESS";
+    public static final String ROUND_FINISHED = "ROUND_FINISHED";
+
     public static final String PLAYER_CHANGE = "PLAYER_CHANGE";
 
     public static final String HIT = "HIT";
@@ -25,20 +32,20 @@ public class SocketMessage implements Serializable {
     public static final String DEAL = "DEAL";
 
 
-    private String message;
-    private Serializable content;
+    private String command;
+    private Serializable payload;
 
-    public SocketMessage(String message, Serializable content) {
-        this.message = message;
-        this.content = content;
+    public SocketMessage(String command, Serializable payload) {
+        this.command = command;
+        this.payload = payload;
     }
 
-    public String getMessage() {
-        return message;
+    public String getCommand() {
+        return command;
     }
 
-    public Serializable getContent() {
-        return content;
+    public Serializable getPayload() {
+        return payload;
     }
 
 }

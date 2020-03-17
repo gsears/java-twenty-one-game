@@ -1,32 +1,27 @@
 package tech.hootlab.client;
 
 import java.awt.*;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import javax.swing.*;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import tech.hootlab.core.Player;
 
-public class PlayerInfoView extends JPanel implements PropertyChangeListener {
+public class PlayerInfoView extends JPanel {
     private static final long serialVersionUID = 1L;
 
     private static final int MINIMUM_HEIGHT = 20;
     private static final int HORIZONTAL_PADDING = 10;
 
+    private String playerName;
     private JLabel playerNameLabel;
+
     private JLabel tokenCountLabel;
     private JLabel playerStateLabel;
 
-    private boolean isCurrentPlayer = false;
     private boolean isDealer = false;
-    private Player player;
 
-    public PlayerInfoView(Player player, int width) {
-        this.player = player;
+    public PlayerInfoView(int width) {
 
         setPreferredSize(new Dimension(width, MINIMUM_HEIGHT));
-
         setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
 
         playerNameLabel = new JLabel();
@@ -40,74 +35,46 @@ public class PlayerInfoView extends JPanel implements PropertyChangeListener {
         add(Box.createHorizontalGlue());
         add(tokenCountLabel);
         add(Box.createRigidArea(new Dimension(HORIZONTAL_PADDING, 0)));
-
-        render();
-
     }
 
-    public void setPlayer(Player player) {
-        if (player != null) {
-            this.player = player;
-            player.addPropertyChangeListener(this);
-        }
+    public void setPlayerName(String name) {
+        playerName = name;
+        setNameDisplay();
     }
 
-    public void render() {
-        if (player != null) {
-            setName();
-            setTokens();
-            setState();
-            repaint();
-            revalidate();
-        }
+    private void setNameDisplay() {
+        String dealerStr = isDealer ? " (dealer)" : "";
+        String nameDisplay = String.format("%s%s", playerName, dealerStr);
+        playerNameLabel.setText(nameDisplay);
+    }
+
+    public void setPlayerTokens(int tokenCount) {
+        tokenCountLabel.setText(String.format("Tokens: %d", tokenCount));
     }
 
     public void setDealer(boolean isDealer) {
         this.isDealer = isDealer;
+        setNameDisplay();
     }
 
     public void setCurrentPlayer(boolean isCurrentPlayer) {
-        this.isCurrentPlayer = isCurrentPlayer;
+        String currentPlayerStr = isCurrentPlayer ? "\u2605 CURRENT PLAYER \u2605" : "";
+        playerStateLabel.setText(currentPlayerStr);
+        playerStateLabel.setForeground(Color.BLACK);
     }
 
-    private void setName() {
-
-        String dealerStr = isDealer ? " (dealer)" : "";
-        String nameDisplay = String.format("%s%s", player.getName(), dealerStr);
-
-        playerNameLabel.setText(nameDisplay);
+    public void setWinner() {
+        playerStateLabel.setText("WINNER");
+        playerStateLabel.setForeground(Color.YELLOW);
     }
 
-    private void setTokens() {
-        tokenCountLabel.setText(String.format("Tokens: %d", player.getTokens()));
+    public void setLoser(boolean isLoser) {
+        playerStateLabel.setText("LOSER");
+        playerStateLabel.setForeground(Color.RED);
     }
 
-    private void setState() {
-        switch (player.getStatus()) {
-            case WAITING:
-                String currentPlayerStr = isCurrentPlayer ? "\u2605 CURRENT PLAYER \u2605" : "";
-                playerStateLabel.setText(currentPlayerStr);
-                playerStateLabel.setForeground(Color.BLACK);
-                break;
-
-            case WINNER:
-                playerStateLabel.setText("WINNER");
-                playerStateLabel.setForeground(Color.YELLOW);
-                break;
-
-            case LOSER:
-                playerStateLabel.setText("LOSER");
-                playerStateLabel.setForeground(Color.RED);
-                break;
-
-            default:
-                break;
-        }
+    public void resetStatus() {
+        playerStateLabel.setText("");
+        playerStateLabel.setForeground(Color.BLACK);
     }
-
-    @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-        render();
-    }
-
 }

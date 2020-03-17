@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.logging.Logger;
 import javax.swing.SwingWorker;
 import tech.hootlab.SocketMessage;
-import tech.hootlab.core.Hand;
 import tech.hootlab.core.Player;
 
 public class ClientController {
@@ -76,40 +75,79 @@ public class ClientController {
             LOGGER.info("Processing message: " + messageList);
             // process all messages
             for (SocketMessage message : messageList) {
-                switch (message.getMessage()) {
-                    case SocketMessage.CONNECT:
-                        LOGGER.info("Received CONNECT message");
-                        // Set the user player
-                        connect((String) message.getContent());
-                        break;
+                handleServerMessage(message);
+            }
+        }
 
-                    case SocketMessage.SET_USER:
-                        LOGGER.info("Received SET_USER message");
-                        setUser((Player) message.getContent());
-                        break;
+        protected void handleServerMessage(SocketMessage message) {
+            String command = message.getCommand();
+            switch (command) {
 
-                    case SocketMessage.NEW_ROUND:
-                        LOGGER.info("Received NEW_ROUND message");
-                        setDealer((Player) message.getContent());
+                // Connection Actions
 
-                        break;
+                case SocketMessage.CONNECT:
+                    LOGGER.info("Received CONNECT message");
+                    connect((String) message.getPayload());
+                    break;
 
-                    case SocketMessage.SET_PLAYERS:
-                        LOGGER.info("Received SET_PLAYERS message");
-                        updatePlayers((List<Player>) message.getContent());
-                        break;
+                // Global Actions
 
-                    case SocketMessage.HAND_UPDATE:
-                        LOGGER.info("Received HAND_UPDATE message");
-                        updateHand((Player) message.getContent());
-                        break;
+                case SocketMessage.SET_USER:
+                    LOGGER.info("Received SET_USER message");
+                    setUser((Player) message.getPayload());
+                    break;
 
-                    default:
-                        break;
-                }
+                case SocketMessage.SET_PLAYERS:
+                    LOGGER.info("Received SET_PLAYERS message");
+                    updateOtherPlayers((List<Player>) message.getPayload());
+                    break;
+
+                // Round Actions
+
+                case SocketMessage.ROUND_PLAYER_CHANGE:
+                    updateCurrentPlayer((Player) message.getPayload());
+                    break;
+
+                case SocketMessage.ROUND_STARTED:
+                    LOGGER.info("Received NEW_ROUND message");
+                    roundStarted((Player) message.getPayload());
+                    break;
+
+                case SocketMessage.ROUND_IN_PROGRESS:
+                    LOGGER.info("Received ROUND_IN_PROGRESS message");
+                    roundInProgress();
+                    break;
+
+                case SocketMessage.ROUND_FINISHED:
+                    LOGGER.info("Received ROUND_FINISHED message");
+                    roundFinished();
+                    break;
+
+                // Player Actions
+
+                case SocketMessage.HAND_UPDATE:
+                    LOGGER.info("Received HAND_UPDATE message");
+                    updateHand((Player) message.getPayload());
+                    break;
+
+                case SocketMessage.TOKEN_UPDATE:
+                    LOGGER.info("Received TOKEN_UPDATE message");
+                    updatePlayerTokens((Player) message.getPayload());
+                    break;
+
+                case SocketMessage.STATUS_UPDATE:
+                    LOGGER.info("Received TOKEN_UPDATE message");
+                    updatePlayerStatus((Player) message.getPayload());
+                    break;
+
+                default:
+                    LOGGER.info("Invalid message received!");
+                    break;
             }
         }
     }
+
+    // Connection Handlers
 
     private void connect(String clientID) {
         this.userID = clientID;
@@ -117,56 +155,76 @@ public class ClientController {
         sendMessage(SocketMessage.CONNECT, clientSettings);
     }
 
+    // Global Handlers
+
     private void setUser(Player userPlayer) {
         view.setUser(userPlayer);
         view.displayMessage("Waiting for next round to begin...");
     }
 
-    private void updatePlayers(List<Player> playerList) {
+    private void updateOtherPlayers(List<Player> playerList) {
         view.clearPlayers();
         for (Player player : playerList) {
-            addPlayer(player);
+            if (!userID.equals(player.getID())) {
+                view.addPlayer(player);
+            }
         }
     }
 
+    // Round Handlers
+
+    private void updateCurrentPlayer(Player currentPlayer) {
+        view.setCurrentPlayer(currentPlayer);
+
+        if (currentPlayer.getID().equals(userID)) {
+            view.setPlayerControl();
+        } else {
+            view.disableControl();
+        }
+    }
+
+    private void roundStarted(Player dealer) {
+        view.setDealer(dealer);
+
+        if (dealer.getID().equals(userID)) {
+            view.setDealerControl();
+        } else {
+            view.disableControl();
+        }
+
+        view.displayMessage("New Round Started. Waiting for dealer...");
+    }
+
+    private void roundInProgress() {
+        view.displayMessage("Round in progress...");
+        // This will be set when player is current_player again
+        view.disableControl();
+    }
+
+    private void roundFinished() {
+        view.displayMessage("Round finished!");
+    }
+
+    // Player handlers
+
     private void updateHand(Player player) {
-        LOGGER.info("Player's hand to update: " + player.getID());
-        LOGGER.info("Hand value: " + player.getHandValue());
-        LOGGER.info("Update hand with: " + player.getHand().getCardList());
         view.updateHand(player);
     }
 
-    private void addPlayer(Player player) {
-        if (!userID.equals(player.getID())) {
-            view.addPlayer(player);
-        }
+    private void updatePlayerTokens(Player player) {
+        view.updateTokens(player);
+    }
+
+    private void updatePlayerStatus(Player player) {
+        view.updateStatus(player);
     }
 
     public void quit() {
         System.exit(0);
     }
 
-    // Messages from server
-    public void updateHand(Hand hand) {
-
-    }
-
-
-    public void setDealer(Player player) {
-        view.setDealer(player);
-
-        if (player.getID().equals(userID)) {
-            view.setDealerControl();
-        } else {
-            view.disableControl();
-        }
-
-        view.displayMessage("NEW ROUND: Waiting for dealer to DEAL!");
-    }
-
-
-
     // Messages to server
+
     public void disconnect() {
         sendMessage(SocketMessage.DISCONNECT);
         LOGGER.info("disconnect");

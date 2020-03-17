@@ -30,7 +30,6 @@ public class Card implements Serializable {
 
     @Override
     public String toString() {
-        // TODO Auto-generated method stub
         return String.format("{%s of %s}", rank, suit);
     }
 }

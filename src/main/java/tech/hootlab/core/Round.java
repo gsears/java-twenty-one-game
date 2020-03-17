@@ -46,6 +46,11 @@ public class Round implements PropertyChangeObservable {
 
     // Start the round
     public void start() {
+        // Reset player statuses
+        for (Player player : playerList) {
+            player.setStatus(PlayerState.WAITING);
+        }
+
         LOGGER.info("Round started");
         deal();
         setState(RoundState.IN_PROGRESS);

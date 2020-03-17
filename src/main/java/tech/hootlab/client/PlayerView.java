@@ -4,37 +4,41 @@ import java.awt.BorderLayout;
 import javax.swing.JPanel;
 import tech.hootlab.core.Hand;
 import tech.hootlab.core.Player;
+import tech.hootlab.core.PlayerState;
 
 public class PlayerView extends JPanel {
     private static final long serialVersionUID = 1L;
-
-    private Player player;
 
     private PlayerInfoView playerInfoView;
     private PlayerHandView playerHandView;
 
     public PlayerView(Player player, int width, int height) {
-        this.player = player;
 
         // Layout
         setLayout(new BorderLayout());
         playerHandView = new PlayerHandView(width, height);
-        playerInfoView = new PlayerInfoView(player, width);
+        playerInfoView = new PlayerInfoView(width);
 
         add(playerInfoView, BorderLayout.NORTH);
         add(playerHandView, BorderLayout.CENTER);
 
-        playerInfoView.setPlayer(player);
+        setPlayer(player);
     }
 
     public void setPlayer(Player player) {
-        this.player = player;
-        playerInfoView.setPlayer(player);
-        render();
+        if (player != null) {
+            playerInfoView.setPlayerName(player.getName());
+            setTokens(player.getTokens());
+            setHand(player.getHand());
+        }
     }
 
     public void setHand(Hand hand) {
         playerHandView.setHand(hand);
+    }
+
+    public void setTokens(int tokens) {
+        playerInfoView.setPlayerTokens(tokens);
     }
 
     public void setCurrentPlayer(boolean isCurrentPlayer) {
@@ -47,16 +51,20 @@ public class PlayerView extends JPanel {
         playerInfoView.setDealer(isDealer);
     }
 
-    public void render() {
-        if (player != null) {
-            // Render info
-            playerInfoView.render();
-
-            // Render cards
-            playerHandView.setHand(player.getHand());
-        } else {
-
-        }
+    public void setStatus(PlayerState status) {
 
     }
+
+    // public void render() {
+    // if (player != null) {
+    // // Render info
+    // playerInfoView.render();
+
+    // // Render cards
+    // playerHandView.setHand(player.getHand());
+    // } else {
+
+    // }
+
+    // }
 }

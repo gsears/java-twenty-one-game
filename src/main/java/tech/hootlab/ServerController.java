@@ -53,11 +53,6 @@ public class ServerController implements PropertyChangeListener {
         sendMessageToAll(SocketMessage.REMOVE_PLAYER, clientID);
     }
 
-    public void newRoundMessage() {
-        sendMessageToAll(SocketMessage.SET_PLAYERS, (LinkedList<Player>) round.getPlayerList());
-        sendMessageToAll(SocketMessage.NEW_ROUND, model.getDealer());
-    }
-
     public void hit(String ID) {
         round.hitWithCurrentPlayer();
     }
@@ -79,8 +74,6 @@ public class ServerController implements PropertyChangeListener {
 
             // Player Events
             case Player.HAND_CHANGE_EVENT:
-                LOGGER.info("Received HAND_CHANGE event: "
-                        + ((Player) evt.getSource()).getHand().getCardList());
                 sendMessageToAll(SocketMessage.HAND_UPDATE, (Player) evt.getSource());
                 break;
 
@@ -93,7 +86,7 @@ public class ServerController implements PropertyChangeListener {
                 break;
 
             case Round.CURRENT_PLAYER_CHANGE_EVENT:
-                sendMessageToAll(SocketMessage.PLAYER_CHANGE, (Player) evt.getNewValue());
+                sendMessageToAll(SocketMessage.ROUND_PLAYER_CHANGE, (Player) evt.getNewValue());
                 break;
 
             case Round.DEALER_CHANGE_EVENT:
@@ -113,15 +106,18 @@ public class ServerController implements PropertyChangeListener {
         LOGGER.info("Received roundState event: " + roundState);
         switch (roundState) {
             case READY:
-                newRoundMessage();
+                sendMessageToAll(SocketMessage.SET_PLAYERS,
+                        (LinkedList<Player>) round.getPlayerList());
+
+                sendMessageToAll(SocketMessage.ROUND_STARTED, model.getDealer());
                 break;
 
             case IN_PROGRESS:
-
+                sendMessageToAll(SocketMessage.ROUND_IN_PROGRESS, null);
                 break;
 
             case FINISHED:
-
+                sendMessageToAll(SocketMessage.ROUND_FINISHED, null);
                 break;
 
             default:

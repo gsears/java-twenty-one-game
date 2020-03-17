@@ -31,16 +31,6 @@ public class PlayerHandView extends JLayeredPane {
      * Creates a container which can display a hand. The cards inside it will be automatically sized
      * so as to allow the maximum hand size.
      *
-     * Defaults to 800x250, just because.
-     */
-    public PlayerHandView() {
-        this(800, 250);
-    }
-
-    /**
-     * Creates a container which can display a hand. The cards inside it will be automatically sized
-     * so as to allow the maximum hand size.
-     *
      * @param width  The width of the container
      * @param height
      */
@@ -63,6 +53,13 @@ public class PlayerHandView extends JLayeredPane {
 
     }
 
+    private void render() {
+        // Repaint to make sure display is updated.
+        repaint();
+        // Revalidate as we've added new panels
+        revalidate();
+    }
+
     public void setHand(Hand hand) {
         LOGGER.info("Setting hand, with cards:" + hand.getCardList());
         clearCards();
@@ -82,9 +79,7 @@ public class PlayerHandView extends JLayeredPane {
         cardView.setSize(cardWidth, cardHeight);
         add(cardView, new Integer(cardDepth));
 
-        // Repaint to make sure display is updated.
-        repaint();
-        revalidate();
+        render();
 
         // The next card overlaps on top
         cardDepth++;
@@ -100,28 +95,6 @@ public class PlayerHandView extends JLayeredPane {
         // Reset the offset.
         offset = new Point(widthOffsetUnit, heightOffsetUnit);
         removeAll();
-        repaint();
-        revalidate();
+        render();
     }
-
-    // public static void main(String[] args) {
-    // // Create and set up the window.
-    // JFrame frame = new JFrame("LayeredPaneDemo");
-    // frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-    // // Create and set up the content pane.
-    // PlayerHandView cardContainer = new PlayerHandView(800, 250);
-    // cardContainer.setOpaque(true); // content panes must be opaque
-    // frame.setContentPane(cardContainer);
-
-    // // Display the window.
-    // frame.pack();
-    // frame.setVisible(true);
-
-    // Hand hand = new Hand();
-    // hand.add(new Card(CardSuits.CLUBS, CardRanks.ACE));
-    // hand.add(new Card(CardSuits.HEARTS, CardRanks.THREE));
-
-    // cardContainer.setHand(hand);
-    // }
 }

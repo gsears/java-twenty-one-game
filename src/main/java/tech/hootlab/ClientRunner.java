@@ -73,12 +73,12 @@ public class ClientRunner implements SocketMessageSender {
                     SocketMessage message = null;
 
                     while ((message = (SocketMessage) objectInputStream.readObject()) != null) {
-                        switch (message.getMessage()) {
+                        switch (message.getCommand()) {
 
                             // Player has passed their settings.
                             case SocketMessage.CONNECT:
                                 controller.addPlayer(clientID,
-                                        (ClientSettings) message.getContent());
+                                        (ClientSettings) message.getPayload());
                                 break;
 
                             case SocketMessage.HIT:

@@ -4,14 +4,13 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 import javax.swing.BoxLayout;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -36,11 +35,6 @@ public class ClientView extends JFrame {
     private PlayerControlView userControlView;
 
     public ClientView(ClientController controller) {
-        // Listen for model property changes
-
-        // model.addPropertyChangeListener(this);
-
-
 
         // Create a panel for storing other players
         gamePanel = new JPanel();
@@ -54,12 +48,14 @@ public class ClientView extends JFrame {
         userPanel = new JPanel(new BorderLayout());
         userPanel.setMinimumSize(new Dimension(WINDOW_WIDTH, PLAYER_SECTION_HEIGHT));
 
+        // Create user view and control panel
         userView = new PlayerView(null, WINDOW_WIDTH, PLAYER_SECTION_HEIGHT);
-
         userControlView = new PlayerControlView(controller);
+
         userPanel.add(userView, BorderLayout.CENTER);
         userPanel.add(userControlView, BorderLayout.SOUTH);
 
+        // Divide other players' views from user view
         JSplitPane pane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, gameContainer, userPanel);
 
         // Handle quit programatically (for disconnecting users when they drop tokens)
@@ -70,43 +66,63 @@ public class ClientView extends JFrame {
             }
         });
 
+        // Set the pane
         add(pane);
+        // Compress to the correct size
         pack();
+        // Place in a suitable area
         setLocationByPlatform(true);
     }
 
+    private void render(JComponent component) {
+        component.repaint();
+        component.revalidate();
+    }
+
+    // Player view actions
+
     public void setUser(Player player) {
         userView.setPlayer(player);
+        // Store for later referencing by player ID
         playerViewMap.put(player.getID(), userView);
-        userPanel.repaint();
-        userPanel.revalidate();
+        render(userPanel);
     }
 
     public void addPlayer(Player player) {
         LOGGER.info("Adding player: " + player);
         PlayerView playerView = new PlayerView(player, WINDOW_WIDTH, PLAYER_SECTION_HEIGHT);
+        // Store for later referencing by player ID
         playerViewMap.put(player.getID(), playerView);
         gamePanel.add(playerView);
-        gamePanel.repaint();
-        gamePanel.validate();
+        render(gamePanel);
     }
 
     public void clearPlayers() {
         for (PlayerView playerView : playerViewMap.values()) {
             gamePanel.remove(playerView);
         }
-        gamePanel.repaint();
-        gamePanel.revalidate();
+        render(gamePanel);
     }
 
     public void updateHand(Player player) {
         LOGGER.info("Updating player hand: " + player);
         PlayerView playerView = playerViewMap.get(player.getID());
         playerView.setHand(player.getHand());
-        gamePanel.repaint();
-        gamePanel.revalidate();
-
     }
+
+    public void updateTokens(Player player) {
+        LOGGER.info("Updating player tokens: " + player);
+        PlayerView playerView = playerViewMap.get(player.getID());
+        playerView.setTokens(player.getTokens());
+    }
+
+    public void updateStatus(Player player) {
+        LOGGER.info("Updating player status: " + player);
+        PlayerView playerView = playerViewMap.get(player.getID());
+        playerView.setStatus(player.getStatus());
+    }
+
+    // Round Actions
 
     public void setDealer(Player player) {
         String playerID = player.getID();
@@ -122,26 +138,6 @@ public class ClientView extends JFrame {
                 playerView.setDealer(false);
             }
         }
-    }
-
-    public void setDealerControl() {
-        userControlView.enableDealButton();
-    }
-
-    public void setPlayerControl() {
-        userControlView.enablePlayButtons();
-    }
-
-    public void disableControl() {
-        userControlView.disableButtons();
-    }
-
-    public void displayMessage(String message) {
-        userControlView.displayMessage(message);
-    }
-
-    public void clearMessage() {
-        userControlView.clearMessage();
     }
 
     public void setCurrentPlayer(Player player) {
@@ -160,57 +156,29 @@ public class ClientView extends JFrame {
         }
     }
 
-    // @Override
-    // public void propertyChange(PropertyChangeEvent evt) {
-    // System.out.println("Property Change");
-    // // Will always be a player
-    // Object val = evt.getNewValue();
-    // Player player = (Player) val;
-    // LOGGER.info("Property Change Event: " + player);
+    // Control Actions
 
-    // switch (evt.getPropertyName()) {
-    // case ClientModel.USER_CHANGE_EVENT:
-    // LOGGER.info("User Change Event");
-    // setUser(player);
-    // break;
+    public void setDealerControl() {
+        userControlView.enableDealButton();
+    }
 
-    // case ClientModel.PLAYER_ADD_EVENT:
-    // addPlayer(player);
-    // break;
+    public void setPlayerControl() {
+        userControlView.enablePlayButtons();
+    }
 
-    // case ClientModel.PLAYER_REMOVE_EVENT:
-    // removePlayer(player);
-    // break;
+    public void disableControl() {
+        userControlView.disableButtons();
+    }
 
-    // case ClientModel.DEALER_CHANGE_EVENT:
-    // setDealer(player);
+    // Message Actions
 
-    // case ClientModel.CURRENT_PLAYER_CHANGE_EVENT:
-    // setCurrentPlayer(player);
+    public void displayMessage(String message) {
+        userControlView.displayMessage(message);
+    }
 
-    // default:
-    // break;
-    // }
-
-    // }
-
+    public void clearMessage() {
+        userControlView.clearMessage();
+    }
 
 
 }
-
-// otherPlayerContainer.add(new PlayerView(p1, WINDOW_WIDTH, PLAYER_SECTION_HEIGHT));
-// otherPlayerContainer.add(new PlayerView(p2, WINDOW_WIDTH, PLAYER_SECTION_HEIGHT));
-// otherPlayerContainer.add(new PlayerView(p3, WINDOW_WIDTH, PLAYER_SECTION_HEIGHT));
-// PlayerView mary = new PlayerView(p4, WINDOW_WIDTH, PLAYER_SECTION_HEIGHT);
-// otherPlayerContainer.add(mary);
-
-// Player p0 = new Player("Nathan", 300);
-// p0.getHand().add(new Card(Suits.CLUBS, Ranks.TEN));
-
-// Player p1 = new Player("Gareth", 400);
-// p1.getHand().add(new Card(Suits.CLUBS, Ranks.ACE));
-// Player p2 = new Player("Tim", 200);
-// Player p3 = new Player("John", 200);
-// Player p4 = new Player("Mary", 200);
-// p4.getHand().add(new Card(Suits.DIAMONDS, Ranks.TEN));
-// p4.getHand().add(new Card(Suits.CLUBS, Ranks.TWO));
