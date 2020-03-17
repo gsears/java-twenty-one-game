@@ -17,7 +17,7 @@ public class Player implements PropertyChangeObservable, Serializable {
     private String name;
     private int tokens;
     private Hand hand;
-    private PlayerState status = PlayerState.WAITING;
+    private PlayerState status = PlayerState.PLAYING;
 
     // Observable attributes
     public static final String HAND_CHANGE_EVENT = "PLAYER_HAND_CHANGE";
@@ -78,7 +78,7 @@ public class Player implements PropertyChangeObservable, Serializable {
     }
 
     public void setStatus(PlayerState status) {
-        PlayerState previousStatus = status;
+        PlayerState previousStatus = this.status;
         this.status = status;
         propertyChangeSupport.firePropertyChange(STATUS_CHANGE_EVENT, previousStatus, status);
     }
@@ -93,8 +93,9 @@ public class Player implements PropertyChangeObservable, Serializable {
 
     public void transferTokens(Player target, int numTokens) {
         int previousTokens = tokens;
+        int targetPreviousTokens = target.tokens;
 
-        if (numTokens < tokens) {
+        if (numTokens > tokens) {
             // Transfers as many tokens as they can, rinse them out!
             target.tokens += tokens;
             tokens = 0;
@@ -103,7 +104,13 @@ public class Player implements PropertyChangeObservable, Serializable {
             tokens -= numTokens;
         }
 
+        target.firePropertyChange(TOKEN_CHANGE_EVENT, targetPreviousTokens, target.tokens);
         propertyChangeSupport.firePropertyChange(TOKEN_CHANGE_EVENT, previousTokens, tokens);
+    }
+
+    // So other player classes can access fire property change (for example, with transfer tokens)
+    protected void firePropertyChange(String propertyName, Object oldValue, Object newValue) {
+        propertyChangeSupport.firePropertyChange(propertyName, oldValue, newValue);
     }
 
     @Override

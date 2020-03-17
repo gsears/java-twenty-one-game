@@ -77,7 +77,18 @@ public class ServerModel {
         }
     }
 
-    private void setDealer(Player player) {
+    public List<Player> removeBrokePlayers() {
+        List<Player> eliminatedPlayers = new LinkedList<>();
+        for (Player player : playerList) {
+            if (player.getTokens() == 0) {
+                eliminatedPlayers.add(player);
+                removePlayer(player);
+            }
+        }
+        return eliminatedPlayers;
+    }
+
+    public void setDealer(Player player) {
         dealer = player;
         LOGGER.info("Dealer set to: " + player);
     }

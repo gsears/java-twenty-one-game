@@ -1,6 +1,7 @@
 package tech.hootlab.client;
 
 import java.awt.BorderLayout;
+import java.util.logging.Logger;
 import javax.swing.JPanel;
 import tech.hootlab.core.Hand;
 import tech.hootlab.core.Player;
@@ -8,6 +9,8 @@ import tech.hootlab.core.PlayerState;
 
 public class PlayerView extends JPanel {
     private static final long serialVersionUID = 1L;
+
+    private final static Logger LOGGER = Logger.getLogger(PlayerView.class.getName());
 
     private PlayerInfoView playerInfoView;
     private PlayerHandView playerHandView;
@@ -44,7 +47,9 @@ public class PlayerView extends JPanel {
     public void setCurrentPlayer(boolean isCurrentPlayer) {
         playerInfoView.setCurrentPlayer(isCurrentPlayer);
         // Auto scroll to show the current player
-        this.scrollRectToVisible(this.getBounds());
+        if (isCurrentPlayer) {
+            this.scrollRectToVisible(this.getBounds());
+        }
     }
 
     public void setDealer(boolean isDealer) {
@@ -52,7 +57,25 @@ public class PlayerView extends JPanel {
     }
 
     public void setStatus(PlayerState status) {
+        LOGGER.info("Setting status: " + status);
+        switch (status) {
+            case PLAYING:
+                playerInfoView.resetStatus();
+                break;
 
+            case LOSER:
+                LOGGER.info("Setting Loser!");
+                playerInfoView.setLoser();
+                break;
+
+            case WINNER:
+                playerInfoView.setWinner();
+                break;
+
+            default:
+                playerInfoView.resetStatus();
+                break;
+        }
     }
 
     // public void render() {

@@ -7,6 +7,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.Socket;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Logger;
 import javax.swing.SwingWorker;
 import tech.hootlab.SocketMessage;
@@ -20,27 +21,51 @@ public class ClientController {
     private ClientView view;
     private Socket server;
 
-    private ObjectOutputStream objectOutputStream;
+    private WriteWorker writeWorker;
 
     public ClientController(Socket server, ClientSettings clientSettings) {
-
         this.clientSettings = clientSettings;
         this.server = server;
-
-        // For writing messages from action events (short enough to not need a thread)
-        try {
-            objectOutputStream = new ObjectOutputStream(server.getOutputStream());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     public void setView(ClientView view) {
         LOGGER.info("View set to: " + view);
         this.view = view;
 
+        writeWorker = new WriteWorker(server);
+        writeWorker.execute();
+
         ReadWorker rw = new ReadWorker(server);
         rw.execute();
+
+    }
+
+    private class WriteWorker extends SwingWorker<Void, SocketMessage> {
+
+        private ObjectOutputStream objectOutputStream;
+        private ConcurrentLinkedQueue<SocketMessage> messageQueue = new ConcurrentLinkedQueue<>();
+
+        public WriteWorker(Socket server) {
+            try {
+                objectOutputStream = new ObjectOutputStream(server.getOutputStream());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        public void write(SocketMessage message) {
+            messageQueue.add(message);
+        }
+
+        @Override
+        protected Void doInBackground() throws Exception {
+            while (true) {
+                if (!messageQueue.isEmpty()) {
+                    LOGGER.info(messageQueue.element().getCommand());
+                    objectOutputStream.writeObject(messageQueue.poll());
+                }
+            }
+        }
     }
 
     private class ReadWorker extends SwingWorker<Void, SocketMessage> {
@@ -90,6 +115,11 @@ public class ClientController {
                     connect((String) message.getPayload());
                     break;
 
+                case SocketMessage.DISCONNECT:
+                    LOGGER.info("Received DISCONNECT message");
+                    disconnect();
+                    break;
+
                 // Global Actions
 
                 case SocketMessage.SET_USER:
@@ -136,12 +166,13 @@ public class ClientController {
                     break;
 
                 case SocketMessage.STATUS_UPDATE:
-                    LOGGER.info("Received TOKEN_UPDATE message");
+                    LOGGER.info("Received STATUS_UPDATE message");
                     updatePlayerStatus((Player) message.getPayload());
                     break;
 
                 default:
                     LOGGER.info("Invalid message received!");
+                    LOGGER.info(message.getCommand() + ": " + message.getPayload());
                     break;
             }
         }
@@ -159,7 +190,7 @@ public class ClientController {
 
     private void setUser(Player userPlayer) {
         view.setUser(userPlayer);
-        view.displayMessage("Waiting for next round to begin...");
+        view.displayMessage("Waiting for next round to join...");
     }
 
     private void updateOtherPlayers(List<Player> playerList) {
@@ -203,6 +234,7 @@ public class ClientController {
 
     private void roundFinished() {
         view.displayMessage("Round finished!");
+        view.disableControl();
     }
 
     // Player handlers
@@ -216,6 +248,7 @@ public class ClientController {
     }
 
     private void updatePlayerStatus(Player player) {
+        LOGGER.info("Updating Player Status");
         view.updateStatus(player);
     }
 
@@ -227,7 +260,8 @@ public class ClientController {
 
     public void disconnect() {
         sendMessage(SocketMessage.DISCONNECT);
-        LOGGER.info("disconnect");
+        System.out.println("COME BACK WHEN YEE GIT MORE TOKENS!");
+        quit();
     }
 
     public void hit() {
@@ -250,10 +284,6 @@ public class ClientController {
     }
 
     private void sendMessage(String message, Serializable payload) {
-        try {
-            objectOutputStream.writeObject(new SocketMessage(message, payload));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        writeWorker.write(new SocketMessage(message, payload));
     }
 }

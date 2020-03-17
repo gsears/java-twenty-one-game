@@ -18,22 +18,21 @@ public class Hand extends Deck implements Comparable<Hand> {
     @Override
     public void add(Card card) {
         CardRanks rank = card.getRank();
-
-        if (rank == CardRanks.ACE) {
-            if (value < 11) {
-                value += 11;
-            } else {
-                value += 1;
-            }
-        } else {
-            value += rank.getValue();
-        }
-
+        value += rank.getValue();
         super.add(card);
     }
 
     public int getValue() {
-        return value;
+        int aceAdjustedValue = value;
+        if (value > 21) {
+            // For each ace, subtract 10
+            for (Card card : getCardList()) {
+                if (card.getRank() == CardRanks.ACE) {
+                    aceAdjustedValue -= 10;
+                }
+            }
+        }
+        return aceAdjustedValue;
     }
 
     /**

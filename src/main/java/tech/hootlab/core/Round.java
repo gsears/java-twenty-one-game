@@ -46,12 +46,9 @@ public class Round implements PropertyChangeObservable {
 
     // Start the round
     public void start() {
-        // Reset player statuses
-        for (Player player : playerList) {
-            player.setStatus(PlayerState.WAITING);
-        }
-
         LOGGER.info("Round started");
+        // Player hands are cleared here so the last rounds hands stay in view.
+        resetPlayers();
         deal();
         setState(RoundState.IN_PROGRESS);
         checkForDealWinners();
@@ -59,6 +56,13 @@ public class Round implements PropertyChangeObservable {
 
     public List<Player> getPlayerList() {
         return playerList;
+    }
+
+    public void resetPlayers() {
+        for (Player player : playerList) {
+            player.clearHand();
+            player.setStatus(PlayerState.PLAYING);
+        }
     }
 
     public void removePlayer(Player player) {
@@ -81,28 +85,23 @@ public class Round implements PropertyChangeObservable {
     // CurrentPlayerHit
     public void hitWithCurrentPlayer() {
 
-        if (state != RoundState.IN_PROGRESS) {
-            throw new IllegalStateException("Round not in progess");
-        }
-
         Card newCard = deck.deal();
         currentPlayer.addCardToHand(newCard);
         int handValue = currentPlayer.getHandValue();
+        LOGGER.info(handValue + " value of hand.");
 
         if (handValue > HAND_MAXIMUM) {
+            LOGGER.info("Hand value greater than " + HAND_MAXIMUM);
             currentPlayer.setStatus(PlayerState.LOSER);
+            LOGGER.info("Transfering stake to dealer, stake: " + stake);
             currentPlayer.transferTokens(dealer, stake);
+            setNextPlayer();
         } else if (handValue == HAND_MAXIMUM) {
             setNextPlayer();
         }
     }
 
     public void stickWithCurrentPlayer() {
-
-        if (state != RoundState.IN_PROGRESS) {
-            throw new IllegalStateException("Round not in progess");
-        }
-
         setNextPlayer();
     }
 
@@ -122,8 +121,6 @@ public class Round implements PropertyChangeObservable {
 
             Player player = playerList.get(playerIndex);
             orderedPlayerList.add(player);
-
-            player.setStatus(PlayerState.PLAYING);
         }
 
         return orderedPlayerList;
@@ -141,6 +138,22 @@ public class Round implements PropertyChangeObservable {
             // or we die looking.
             if (removedPlayerList.contains(currentPlayer)) {
                 setNextPlayer();
+            }
+
+            // If the player is the dealer and there are no players left, end round
+            if (currentPlayer.equals(dealer)) {
+                boolean playersLeft = false;
+                for (Player player : playerList) {
+                    if (!player.equals(dealer)) {
+                        if (player.getStatus() == PlayerState.PLAYING) {
+                            playersLeft = true;
+                            break;
+                        }
+                    }
+                }
+                if (!playersLeft) {
+                    endRound();
+                }
             }
 
         } else {
@@ -199,16 +212,17 @@ public class Round implements PropertyChangeObservable {
                     }
                 }
 
-                // More than one winner on deal
-            } else {
-                if (!winnerList.contains(dealer)) {
-                    Player previousDealer = dealer;
-                    // dealer is player with positional priority.
-                    dealer = winnerList.get(0);
-                    propertyChangeSupport.firePropertyChange(DEALER_CHANGE_EVENT, previousDealer,
-                            dealer);
-                }
-                // No winners / losers, so no money is exchanged / no tokenChangeUpdates
+
+            }
+            // If more than one winner on deal, no winners / losers.
+            // No money is exchanged / no tokenChangeUpdates, just a dealer change.
+
+            if (!winnerList.contains(dealer)) {
+                Player previousDealer = dealer;
+                // dealer is player with positional priority.
+                dealer = winnerList.get(0);
+                propertyChangeSupport.firePropertyChange(DEALER_CHANGE_EVENT, previousDealer,
+                        dealer);
             }
 
             setState(RoundState.FINISHED);
@@ -216,7 +230,6 @@ public class Round implements PropertyChangeObservable {
     }
 
     private void endRound() {
-
         // Get remaining players
         List<Player> remainingPlayers = new LinkedList<>();
 
@@ -245,6 +258,8 @@ public class Round implements PropertyChangeObservable {
             }
         }
 
+        // Dealer never really 'wins or loses' due to their role.
+        dealer.setStatus(PlayerState.PLAYING);
         setState(RoundState.FINISHED);
     }
 

@@ -4,6 +4,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.Serializable;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 import tech.hootlab.client.ClientSettings;
@@ -37,12 +38,11 @@ public class ServerController implements PropertyChangeListener {
         sendMessageToAll(SocketMessage.ADD_PLAYER, player);
         // Send the client their player object.
         sendMessage(clientID, SocketMessage.SET_USER, player);
-        // Send the client a list of the current players so they can spectate round in progress
-        sendMessage(clientID, SocketMessage.SET_PLAYERS,
-                (LinkedList<Player>) round.getPlayerList());
+        // Send the client a list of the current players so they can spectate round in
+        // progress
+        sendMessage(clientID, SocketMessage.SET_PLAYERS, (LinkedList<Player>) round.getPlayerList());
 
         model.addPlayer(player);
-
 
     }
 
@@ -78,11 +78,12 @@ public class ServerController implements PropertyChangeListener {
                 break;
 
             case Player.STATUS_CHANGE_EVENT:
-                sendMessageToAll(SocketMessage.PLAYER_CHANGE, (Player) evt.getSource());
+                LOGGER.info("Sending STATUS_CHANGE_EVENT");
+                sendMessageToAll(SocketMessage.STATUS_UPDATE, (Player) evt.getSource());
                 break;
 
             case Player.TOKEN_CHANGE_EVENT:
-                sendMessageToAll(SocketMessage.PLAYER_CHANGE, (Player) evt.getSource());
+                sendMessageToAll(SocketMessage.TOKEN_UPDATE, (Player) evt.getSource());
                 break;
 
             case Round.CURRENT_PLAYER_CHANGE_EVENT:
@@ -90,7 +91,9 @@ public class ServerController implements PropertyChangeListener {
                 break;
 
             case Round.DEALER_CHANGE_EVENT:
-                sendMessageToAll(SocketMessage.PLAYER_CHANGE, (Player) evt.getNewValue());
+                Player newDealer = (Player) evt.getNewValue();
+                model.setDealer(newDealer);
+                sendMessageToAll(SocketMessage.PLAYER_CHANGE, newDealer);
                 break;
 
             case Round.STATE_CHANGE_EVENT:
@@ -106,9 +109,7 @@ public class ServerController implements PropertyChangeListener {
         LOGGER.info("Received roundState event: " + roundState);
         switch (roundState) {
             case READY:
-                sendMessageToAll(SocketMessage.SET_PLAYERS,
-                        (LinkedList<Player>) round.getPlayerList());
-
+                sendMessageToAll(SocketMessage.SET_PLAYERS, (LinkedList<Player>) round.getPlayerList());
                 sendMessageToAll(SocketMessage.ROUND_STARTED, model.getDealer());
                 break;
 
@@ -118,6 +119,12 @@ public class ServerController implements PropertyChangeListener {
 
             case FINISHED:
                 sendMessageToAll(SocketMessage.ROUND_FINISHED, null);
+                // Kick out any dead-beat no has-moneys.
+                List<Player> deadbeatList = model.removeBrokePlayers();
+                deadbeatList.forEach(p -> sendMessage(p.getID(), SocketMessage.DISCONNECT, null));
+                if (model.getPlayerList().size() > 1) {
+                    model.startNextRound();
+                }
                 break;
 
             default:

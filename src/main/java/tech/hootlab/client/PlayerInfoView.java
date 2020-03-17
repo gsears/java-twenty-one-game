@@ -18,6 +18,7 @@ public class PlayerInfoView extends JPanel {
     private JLabel playerStateLabel;
 
     private boolean isDealer = false;
+    private boolean stateSet = false;
 
     public PlayerInfoView(int width) {
 
@@ -36,6 +37,7 @@ public class PlayerInfoView extends JPanel {
         add(tokenCountLabel);
         add(Box.createRigidArea(new Dimension(HORIZONTAL_PADDING, 0)));
     }
+
 
     public void setPlayerName(String name) {
         playerName = name;
@@ -58,22 +60,28 @@ public class PlayerInfoView extends JPanel {
     }
 
     public void setCurrentPlayer(boolean isCurrentPlayer) {
-        String currentPlayerStr = isCurrentPlayer ? "\u2605 CURRENT PLAYER \u2605" : "";
-        playerStateLabel.setText(currentPlayerStr);
-        playerStateLabel.setForeground(Color.BLACK);
+        // If no previous state (i.e. not a WINNER / LOSER)
+        if (!stateSet) {
+            String currentPlayerStr = isCurrentPlayer ? "\u2605 CURRENT PLAYER \u2605" : "";
+            playerStateLabel.setText(currentPlayerStr);
+            playerStateLabel.setForeground(Color.BLACK);
+        }
     }
 
     public void setWinner() {
         playerStateLabel.setText("WINNER");
-        playerStateLabel.setForeground(Color.YELLOW);
+        playerStateLabel.setForeground(Color.GREEN);
+        stateSet = true;
     }
 
-    public void setLoser(boolean isLoser) {
+    public void setLoser() {
         playerStateLabel.setText("LOSER");
         playerStateLabel.setForeground(Color.RED);
+        stateSet = true;
     }
 
     public void resetStatus() {
+        stateSet = false;
         playerStateLabel.setText("");
         playerStateLabel.setForeground(Color.BLACK);
     }
