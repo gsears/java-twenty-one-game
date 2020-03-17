@@ -20,9 +20,13 @@ public class Player implements PropertyChangeObservable, Serializable {
     private PlayerState status = PlayerState.PLAYING;
 
     // Observable attributes
+    // Class is observable to allow for easier tracking of state to transmit to
+    // clients. The following are property change messages associated with the
+    // events.
     public static final String HAND_CHANGE_EVENT = "PLAYER_HAND_CHANGE";
     public static final String TOKEN_CHANGE_EVENT = "PLAYER_TOKEN_CHANGE";
     public static final String STATUS_CHANGE_EVENT = "PLAYER_STATUS_CHANGE";
+
     private PropertyChangeSupport propertyChangeSupport;
 
     public Player(String name, int initialTokens) {
@@ -58,19 +62,15 @@ public class Player implements PropertyChangeObservable, Serializable {
         hand.add(card);
 
         LOGGER.info("Adding card: " + card);
-        propertyChangeSupport.firePropertyChange(HAND_CHANGE_EVENT, previousCards,
-                hand.getCardList());
+        propertyChangeSupport.firePropertyChange(HAND_CHANGE_EVENT, previousCards, hand.getCardList());
 
-
-        LOGGER.info(String.format("PropChangeSupport should have fired: %s, %s", previousCards,
-                hand.getCardList()));
+        LOGGER.info(String.format("PropChangeSupport should have fired: %s, %s", previousCards, hand.getCardList()));
     }
 
     public void clearHand() {
         List<Card> previousCards = hand.getCardList();
         hand = new Hand();
-        propertyChangeSupport.firePropertyChange(HAND_CHANGE_EVENT, previousCards,
-                hand.getCardList());
+        propertyChangeSupport.firePropertyChange(HAND_CHANGE_EVENT, previousCards, hand.getCardList());
     }
 
     public PlayerState getStatus() {
@@ -108,7 +108,8 @@ public class Player implements PropertyChangeObservable, Serializable {
         propertyChangeSupport.firePropertyChange(TOKEN_CHANGE_EVENT, previousTokens, tokens);
     }
 
-    // So other player classes can access fire property change (for example, with transfer tokens)
+    // So other player classes can access fire property change (for example, with
+    // transfer tokens)
     protected void firePropertyChange(String propertyName, Object oldValue, Object newValue) {
         propertyChangeSupport.firePropertyChange(propertyName, oldValue, newValue);
     }
