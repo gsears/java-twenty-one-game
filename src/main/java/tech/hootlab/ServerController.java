@@ -86,6 +86,7 @@ public class ServerController implements PropertyChangeListener {
                 sendMessageToAll(SocketMessage.TOKEN_UPDATE, (Player) evt.getSource());
                 break;
 
+            // Round Events
             case Round.CURRENT_PLAYER_CHANGE_EVENT:
                 sendMessageToAll(SocketMessage.ROUND_PLAYER_CHANGE, (Player) evt.getNewValue());
                 break;

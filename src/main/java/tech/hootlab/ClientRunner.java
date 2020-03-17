@@ -7,12 +7,10 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.logging.Logger;
+
 import tech.hootlab.client.ClientSettings;
 
 public class ClientRunner implements SocketMessageSender {
-    // assumes the current class is called MyLogger
-    private final static Logger LOGGER = Logger.getLogger(ClientRunner.class.getName());
 
     private Socket client;
     private String clientID;
@@ -37,7 +35,7 @@ public class ClientRunner implements SocketMessageSender {
         Thread writeThread = new Thread(clientWriter);
         writeThread.start();
 
-        // Send the client their ID
+        // Send the client their ID on connection
         sendMessage(new SocketMessage(SocketMessage.CONNECT, clientID));
     }
 
@@ -50,7 +48,6 @@ public class ClientRunner implements SocketMessageSender {
     }
 
     public void disconnect() {
-        LOGGER.info(clientID + " has disconnected.");
         isConnected = false;
     }
 
@@ -75,27 +72,19 @@ public class ClientRunner implements SocketMessageSender {
                     while ((message = (SocketMessage) objectInputStream.readObject()) != null) {
                         switch (message.getCommand()) {
 
-                            // Player has passed their settings.
                             case SocketMessage.CONNECT:
-                                controller.addPlayer(clientID,
-                                        (ClientSettings) message.getPayload());
+                                controller.addPlayer(clientID, (ClientSettings) message.getPayload());
                                 break;
 
                             case SocketMessage.HIT:
-                                // API CONTENT:
-                                // (String) playerName
                                 controller.hit((String) clientID);
                                 break;
 
                             case SocketMessage.STICK:
-                                // API CONTENT:
-                                // (String) playerName
                                 controller.stick((String) clientID);
                                 break;
 
                             case SocketMessage.DEAL:
-                                // API CONTENT:
-                                // (String) playerName
                                 controller.deal((String) clientID);
                                 break;
 
@@ -118,7 +107,6 @@ public class ClientRunner implements SocketMessageSender {
             }
         }
     }
-
 
     // Private class so we can access instance variables
     private class ClientWriter implements Runnable {
@@ -144,10 +132,9 @@ public class ClientRunner implements SocketMessageSender {
             while (isConnected) {
                 try {
                     if (!messageQueue.isEmpty()) {
-
                         objectOutputStream.writeObject(messageQueue.poll());
-                        // Reset to avoid caching, as we're sending the same references which may
-                        // change internally.
+                        // Reset to avoid caching, as we send the same objects with different internal
+                        // states. This bug was a nightmare to find!
                         objectOutputStream.reset();
                     }
                 } catch (IOException e) {

@@ -205,13 +205,15 @@ public class ClientController {
     // Round Handlers
 
     private void updateCurrentPlayer(Player currentPlayer) {
+
         view.setCurrentPlayer(currentPlayer);
 
-        if (currentPlayer.getID().equals(userID)) {
+        if (currentPlayer != null && currentPlayer.getID().equals(userID)) {
             view.setPlayerControl();
         } else {
             view.disableControl();
         }
+
     }
 
     private void roundStarted(Player dealer) {

@@ -41,8 +41,8 @@ public class ClientView extends JFrame {
         gamePanel.setLayout(new BoxLayout(gamePanel, BoxLayout.PAGE_AXIS));
 
         gameContainer = new JScrollPane(gamePanel);
-        gameContainer.getViewport().setPreferredSize(
-                new Dimension(WINDOW_WIDTH, WINDOW_HEIGHT - PLAYER_SECTION_HEIGHT));
+        gameContainer.getViewport()
+                .setPreferredSize(new Dimension(WINDOW_WIDTH, WINDOW_HEIGHT - PLAYER_SECTION_HEIGHT));
 
         // Create a panel for storing user
         userPanel = new JPanel(new BorderLayout());
@@ -141,7 +141,9 @@ public class ClientView extends JFrame {
     }
 
     public void setCurrentPlayer(Player player) {
-        String playerID = player.getID();
+
+        // If the current player doesn't exist, all players will be reset.
+        String playerID = player == null ? null : player.getID();
 
         Iterator<Entry<String, PlayerView>> iterator = playerViewMap.entrySet().iterator();
         while (iterator.hasNext()) {
@@ -179,6 +181,5 @@ public class ClientView extends JFrame {
     public void clearMessage() {
         userControlView.clearMessage();
     }
-
 
 }
