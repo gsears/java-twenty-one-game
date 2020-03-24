@@ -10,23 +10,31 @@ import java.util.List;
  */
 
 /**
- * A class representing a collection of cards. Note: this doesn't necessarily
- * mean the full '52' cards, rather a 'collection' of cards of any size.
+ * A class representing a collection of cards. Note: this doesn't necessarily mean the full '52'
+ * cards, rather a 'collection' of cards of any size.
  */
 public class Deck implements Serializable {
     private static final long serialVersionUID = 1L;
 
     // Define as linked list so we can use list (shuffle) and queue (poll)
     // functionality.
+
+    // This is NOT thread safe, so all operations relating to this object must
+    // be via this class and synchronized against this object.
+    // This list should ONLY be returned as an immutable version. I imagine this is
+    // OK, as the game is turn based and each thread is responsible for updates only
+    // on it's own turn, so everything should be eventually consistant in the right
+    // timeframe.
     LinkedList<Card> cardList = new LinkedList<>();
 
     /**
-     * A static utility method for getting your bog-standard deck of cards from the
-     * ranks and suits provided.
+     * A static utility method for getting your bog-standard deck of cards from the ranks and suits
+     * provided.
      *
      * @return
      */
     public static Deck getStandardDeck() {
+        // Shouldn't need to be synchronized, as the object is initialized completely in this block
         Deck deck = new Deck();
         for (CardSuits suit : CardSuits.values()) {
             for (CardRanks rank : CardRanks.values()) {
@@ -37,20 +45,24 @@ public class Deck implements Serializable {
     }
 
     /**
-     * Get a list of the cards. This has to return a linked list for serializability
-     * (was previously getting blank lists on the receiving end).
+     * Get a list of the cards. This has to return a linked list for serializability (was previously
+     * getting blank lists on the receiving end).
      *
      * @return a linked list of the cards
      */
     public List<Card> getCardList() {
-        return cardList;
+        // Returns immutable list for thread safety
+        return Collections.unmodifiableList(cardList);
     }
 
     /**
      * Shuffle the deck.
      */
     public Deck shuffle() {
-        Collections.shuffle(cardList);
+        // Lock the list so it cannot be read/written to during shuffle
+        synchronized (cardList) {
+            Collections.shuffle(cardList);
+        }
         return this;
     }
 
@@ -60,7 +72,10 @@ public class Deck implements Serializable {
      * @return
      */
     public Card deal() {
-        return cardList.poll();
+        // Lock list
+        synchronized (cardList) {
+            return cardList.poll();
+        }
     }
 
     /**
@@ -69,7 +84,9 @@ public class Deck implements Serializable {
      * @param card The card to add.
      */
     public void add(Card card) {
-        cardList.addLast(card);
+        synchronized (cardList) {
+            cardList.addLast(card);
+        }
     }
 
     /**
@@ -78,6 +95,8 @@ public class Deck implements Serializable {
      * @param deck The deck to add.
      */
     public void add(Deck deck) {
-        cardList.addAll(deck.getCardList());
+        synchronized (cardList) {
+            cardList.addAll(deck.getCardList());
+        }
     }
 }
