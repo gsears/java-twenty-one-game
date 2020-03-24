@@ -9,10 +9,6 @@ public class SocketMessage implements Serializable {
     public static final String CONNECT = "CONNECT";
     public static final String SET_USER = "SET_USER";
 
-    public static final String ADD_PLAYER = "ADD_PLAYER";
-    public static final String REMOVE_PLAYER = "REMOVE_PLAYER";
-
-    public static final String SET_USER_PLAYER = "SET_USER";
     public static final String SET_PLAYERS = "SET_PLAYERS";
     public static final String DISCONNECT = "DISCONNECT";
 
@@ -25,12 +21,9 @@ public class SocketMessage implements Serializable {
     public static final String ROUND_IN_PROGRESS = "ROUND_IN_PROGRESS";
     public static final String ROUND_FINISHED = "ROUND_FINISHED";
 
-    public static final String PLAYER_CHANGE = "PLAYER_CHANGE";
-
     public static final String HIT = "HIT";
     public static final String STICK = "STICK";
     public static final String DEAL = "DEAL";
-
 
     private String command;
     private Serializable payload;

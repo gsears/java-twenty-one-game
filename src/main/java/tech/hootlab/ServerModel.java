@@ -2,21 +2,11 @@ package tech.hootlab;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Logger;
 import tech.hootlab.core.Player;
 import tech.hootlab.core.Round;
 
-/*
- * Game.java Gareth Sears - 2493194S
- */
-
-/**
- * A class representing the state of a game.
- */
 public class ServerModel {
-    private final static Logger LOGGER = Logger.getLogger(ServerModel.class.getName());
-
-    public final int STAKE = 20;
+    public final int ROUND_STAKE = 20;
 
     List<Player> playerList = new LinkedList<>();
     Round round = new Round();
@@ -31,17 +21,12 @@ public class ServerModel {
     }
 
     public void startNextRound() {
-        round.reset(new LinkedList<>(playerList), dealer, STAKE);
-    }
-
-    public Player getDealer() {
-        return dealer;
+        round.reset(new LinkedList<>(playerList), dealer, ROUND_STAKE);
     }
 
     // Players added and removed from the game should be added on next round.
     public void addPlayer(Player player) {
         playerList.add(player);
-        LOGGER.info("Player added: " + player);
 
         // If it's the first player, they're the dealer!
         if (playerList.size() == 1) {
@@ -50,7 +35,6 @@ public class ServerModel {
 
         // We've got enough players to play
         if (playerList.size() == 2) {
-            LOGGER.info("We have two players");
             startNextRound();
         }
     }
@@ -64,11 +48,9 @@ public class ServerModel {
     }
 
     public void removePlayer(Player player) {
-        LOGGER.info("Removing player: " + player);
         playerList.remove(player);
 
         if (dealer.equals(player) && playerList.size() > 0) {
-            LOGGER.info("Player was dealer, assigning new dealer... ");
             setDealer(playerList.get(0));
         }
 
@@ -88,8 +70,11 @@ public class ServerModel {
         return eliminatedPlayers;
     }
 
+    public Player getDealer() {
+        return dealer;
+    }
+
     public void setDealer(Player player) {
         dealer = player;
-        LOGGER.info("Dealer set to: " + player);
     }
 }
