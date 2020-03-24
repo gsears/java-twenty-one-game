@@ -12,8 +12,8 @@ import java.io.Serializable;
 public class Card implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private CardSuits suit;
-    private CardRanks rank;
+    private final CardSuits suit;
+    private final CardRanks rank;
 
     public Card(CardSuits suit, CardRanks rank) {
         this.suit = suit;
