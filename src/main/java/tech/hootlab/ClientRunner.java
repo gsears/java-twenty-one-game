@@ -127,16 +127,18 @@ public class ClientRunner implements SocketMessageSender {
 
         @Override
         public void run() {
-            try {
-                if (!messageQueue.isEmpty()) {
-                    objectOutputStream.writeObject(messageQueue.poll());
-                    // Reset to avoid caching, as we send the same objects with different
-                    // internal
-                    // states. This bug was a nightmare to find!
-                    objectOutputStream.reset();
+            while (true) {
+                try {
+                    if (!messageQueue.isEmpty()) {
+                        objectOutputStream.writeObject(messageQueue.poll());
+                        // Reset to avoid caching, as we send the same objects with different
+                        // internal
+                        // states. This bug was a nightmare to find!
+                        objectOutputStream.reset();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         }
     }
