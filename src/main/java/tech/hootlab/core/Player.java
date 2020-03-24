@@ -3,8 +3,6 @@ package tech.hootlab.core;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.Serializable;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
 
@@ -13,11 +11,15 @@ public class Player implements PropertyChangeObservable, Serializable {
 
     private final static Logger LOGGER = Logger.getLogger(Player.class.getName());
 
-    private String ID;
-    private String name;
+    private final String ID;
+    private final String name;
+
     private int tokens;
+    private final Object tokenLock = new Object();
     private Hand hand;
+    private final Object handLock = new Object();
     private PlayerState status = PlayerState.PLAYING;
+    private final Object statusLock = new Object();
 
     // Observable attributes
     // Class is observable to allow for easier tracking of state to transmit to
@@ -50,67 +52,108 @@ public class Player implements PropertyChangeObservable, Serializable {
     }
 
     public Hand getHand() {
-        return hand;
+        synchronized (handLock) {
+            return hand;
+        }
     }
 
     public int getHandValue() {
-        return hand.getValue();
+        synchronized (handLock) {
+            return hand.getValue();
+        }
     }
 
     public void addCardToHand(Card card) {
-        List<Card> previousCards = new LinkedList<>(hand.getCardList());
-        hand.add(card);
+        synchronized (handLock) {
+            hand.add(card);
+        }
+        firePropertyChange(HAND_CHANGE_EVENT, null, hand.getCardList());
 
-        LOGGER.info("Adding card: " + card);
-        propertyChangeSupport.firePropertyChange(HAND_CHANGE_EVENT, previousCards, hand.getCardList());
-
-        LOGGER.info(String.format("PropChangeSupport should have fired: %s, %s", previousCards, hand.getCardList()));
     }
 
-    public void clearHand() {
-        List<Card> previousCards = hand.getCardList();
-        hand = new Hand();
-        propertyChangeSupport.firePropertyChange(HAND_CHANGE_EVENT, previousCards, hand.getCardList());
+    public synchronized void clearHand() {
+        synchronized (handLock) {
+            hand = new Hand();
+        }
+        firePropertyChange(HAND_CHANGE_EVENT, null, hand.getCardList());
     }
 
     public PlayerState getStatus() {
-        return status;
+        synchronized (statusLock) {
+            return status;
+        }
     }
 
-    public void setStatus(PlayerState status) {
-        PlayerState previousStatus = this.status;
-        this.status = status;
-        propertyChangeSupport.firePropertyChange(STATUS_CHANGE_EVENT, previousStatus, status);
+    public synchronized void setStatus(PlayerState status) {
+        synchronized (statusLock) {
+            this.status = status;
+        }
+        firePropertyChange(STATUS_CHANGE_EVENT, null, status);
     }
 
     public int getTokens() {
-        return tokens;
+        synchronized (tokenLock) {
+            return tokens;
+        }
     }
 
     public void setTokens(int tokens) {
-        this.tokens = tokens;
+        synchronized (tokenLock) {
+            this.tokens = tokens;
+        }
     }
 
     public void transferTokens(Player target, int numTokens) {
-        int previousTokens = tokens;
-        int targetPreviousTokens = target.tokens;
+        // Do nothing if the target player is the same as this player
+        if (!target.equals(this)) {
 
-        if (numTokens > tokens) {
-            // Transfers as many tokens as they can, rinse them out!
-            target.tokens += tokens;
-            tokens = 0;
-        } else {
-            target.tokens += numTokens;
-            tokens -= numTokens;
+            // A helper class which embeds the transfer function
+            // This pattern is used in the Java Concurrency in Practice book
+
+            class Helper {
+                public void transfer() {
+                    if (numTokens > tokens) {
+                        // Transfers as many tokens as they can, rinse them out!
+                        target.tokens += tokens;
+                        tokens = 0;
+                    } else {
+                        target.tokens += numTokens;
+                        tokens -= numTokens;
+                    }
+                }
+            }
+
+            // As we are using nested locks, we need to take into account the case where
+            // the transferTokens function is called simultaneously, but with the Player
+            // objects reversed (this -> target, and vice versa). Therefore, we need to
+            // induce order on the locks. We do this by ordering the locks via the players'
+            // immutable ID values.
+
+            int lockOrderComparison = this.getID().compareTo(target.getID());
+            if (lockOrderComparison < 0) {
+                synchronized (this.tokenLock) {
+                    synchronized (target.tokenLock) {
+                        new Helper().transfer();
+                    }
+                }
+            } else if (lockOrderComparison > 0) {
+                synchronized (target.tokenLock) {
+                    synchronized (this.tokenLock) {
+                        new Helper().transfer();
+                    }
+                }
+            }
+
+            target.firePropertyChange(TOKEN_CHANGE_EVENT, null, target.tokens);
+            firePropertyChange(TOKEN_CHANGE_EVENT, null, tokens);
         }
 
-        target.firePropertyChange(TOKEN_CHANGE_EVENT, targetPreviousTokens, target.tokens);
-        propertyChangeSupport.firePropertyChange(TOKEN_CHANGE_EVENT, previousTokens, tokens);
+
     }
 
     // So other player classes can access fire property change (for example, with
     // transfer tokens)
-    protected void firePropertyChange(String propertyName, Object oldValue, Object newValue) {
+    private void firePropertyChange(String propertyName, Object oldValue, Object newValue) {
         propertyChangeSupport.firePropertyChange(propertyName, oldValue, newValue);
     }
 
@@ -136,6 +179,7 @@ public class Player implements PropertyChangeObservable, Serializable {
 
     @Override
     public boolean equals(Object obj) {
+        // ID is immutable, so threadsafe.
         if (obj instanceof Player) {
             return ID.equals(((Player) obj).getID());
         } else {
