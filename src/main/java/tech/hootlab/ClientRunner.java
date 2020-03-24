@@ -12,27 +12,27 @@ import tech.hootlab.client.ClientSettings;
 
 public class ClientRunner implements SocketMessageSender {
 
-    private Socket client;
-    private String clientID;
+    private final Socket client;
+    private final String clientID;
 
-    private ClientReader clientReader;
-    private ClientWriter clientWriter;
+    private final ClientWriter clientWriter;
+
+    private final Thread readThread;
+    private final Thread writeThread;
 
     private ServerController controller;
-
-    private boolean isConnected = true;
 
     public ClientRunner(Socket client, ServerController controller) {
         this.controller = controller;
         this.clientID = UUID.randomUUID().toString();
         this.client = client;
 
-        clientReader = new ClientReader();
-        Thread readThread = new Thread(clientReader);
+        ClientReader clientReader = new ClientReader();
+        readThread = new Thread(clientReader);
         readThread.start();
 
         clientWriter = new ClientWriter();
-        Thread writeThread = new Thread(clientWriter);
+        writeThread = new Thread(clientWriter);
         writeThread.start();
 
         // Send the client their ID on connection
@@ -48,7 +48,8 @@ public class ClientRunner implements SocketMessageSender {
     }
 
     public void disconnect() {
-        isConnected = false;
+        readThread.interrupt();
+        writeThread.interrupt();
     }
 
     // Private class so we can access instance variables
@@ -65,45 +66,42 @@ public class ClientRunner implements SocketMessageSender {
         }
 
         public void run() {
-            while (isConnected) {
-                try {
-                    SocketMessage message = null;
+            try {
+                SocketMessage message = null;
 
-                    while ((message = (SocketMessage) objectInputStream.readObject()) != null) {
-                        switch (message.getCommand()) {
+                while ((message = (SocketMessage) objectInputStream.readObject()) != null) {
+                    switch (message.getCommand()) {
 
-                            case SocketMessage.CONNECT:
-                                controller.addPlayer(clientID, (ClientSettings) message.getPayload());
-                                break;
+                        case SocketMessage.CONNECT:
+                            controller.addPlayer(clientID, (ClientSettings) message.getPayload());
+                            break;
 
-                            case SocketMessage.HIT:
-                                controller.hit((String) clientID);
-                                break;
+                        case SocketMessage.HIT:
+                            controller.hit((String) clientID);
+                            break;
 
-                            case SocketMessage.STICK:
-                                controller.stick((String) clientID);
-                                break;
+                        case SocketMessage.STICK:
+                            controller.stick((String) clientID);
+                            break;
 
-                            case SocketMessage.DEAL:
-                                controller.deal((String) clientID);
-                                break;
+                        case SocketMessage.DEAL:
+                            controller.deal((String) clientID);
+                            break;
 
-                            default:
-                                break;
-                        }
+                        default:
+                            break;
                     }
-
-                    objectInputStream.close();
-
-                } catch (EOFException e) {
-                    disconnect();
-                    controller.removePlayer(clientID);
-
-                } catch (ClassNotFoundException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
                 }
+
+                objectInputStream.close();
+
+            } catch (EOFException e) {
+                controller.removePlayer(clientID);
+                disconnect();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }
@@ -129,17 +127,16 @@ public class ClientRunner implements SocketMessageSender {
 
         @Override
         public void run() {
-            while (isConnected) {
-                try {
-                    if (!messageQueue.isEmpty()) {
-                        objectOutputStream.writeObject(messageQueue.poll());
-                        // Reset to avoid caching, as we send the same objects with different internal
-                        // states. This bug was a nightmare to find!
-                        objectOutputStream.reset();
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
+            try {
+                if (!messageQueue.isEmpty()) {
+                    objectOutputStream.writeObject(messageQueue.poll());
+                    // Reset to avoid caching, as we send the same objects with different
+                    // internal
+                    // states. This bug was a nightmare to find!
+                    objectOutputStream.reset();
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }
