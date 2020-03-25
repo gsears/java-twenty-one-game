@@ -15,11 +15,15 @@ public class Player implements PropertyChangeObservable, Serializable {
     private final String name;
 
     private int tokens;
-    private final Object tokenLock = new Object();
     private Hand hand;
-    private final Object handLock = new Object();
     private PlayerState status = PlayerState.PLAYING;
-    private final Object statusLock = new Object();
+
+
+    // Uses empty object array, as this is serializable
+    // https://stackoverflow.com/questions/15638972/is-it-okay-to-to-make-the-lock-transient-for-a-serializable-class
+    private final Object tokenLock = new Object[0];
+    private final Object handLock = new Object[0];
+    private final Object statusLock = new Object[0];
 
     // Observable attributes
     // Class is observable to allow for easier tracking of state to transmit to
@@ -182,6 +186,9 @@ public class Player implements PropertyChangeObservable, Serializable {
         // ID is immutable, so threadsafe.
         if (obj instanceof Player) {
             return ID.equals(((Player) obj).getID());
+        } else if (obj instanceof String) {
+            // Can compare if ID is the same
+            return ID.equals((String) obj);
         } else {
             return false;
         }

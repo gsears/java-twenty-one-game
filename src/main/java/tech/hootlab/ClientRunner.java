@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -27,16 +28,12 @@ public class ClientRunner implements SocketMessageSender {
         this.clientID = UUID.randomUUID().toString();
         this.client = client;
 
-        ClientReader clientReader = new ClientReader();
-        readThread = new Thread(clientReader);
+        readThread = new Thread(new ClientReader());
         readThread.start();
 
         clientWriter = new ClientWriter();
         writeThread = new Thread(clientWriter);
         writeThread.start();
-
-        // Send the client their ID on connection
-        sendMessage(new SocketMessage(SocketMessage.CONNECT, clientID));
     }
 
     public String getID() {
@@ -96,8 +93,8 @@ public class ClientRunner implements SocketMessageSender {
                 objectInputStream.close();
 
             } catch (EOFException e) {
-                controller.removePlayer(clientID);
                 disconnect();
+                controller.removePlayer(clientID);
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             } catch (IOException e) {
@@ -132,8 +129,7 @@ public class ClientRunner implements SocketMessageSender {
                     if (!messageQueue.isEmpty()) {
                         objectOutputStream.writeObject(messageQueue.poll());
                         // Reset to avoid caching, as we send the same objects with different
-                        // internal
-                        // states. This bug was a nightmare to find!
+                        // internal states. This bug was a nightmare to find!
                         objectOutputStream.reset();
                     }
                 } catch (IOException e) {

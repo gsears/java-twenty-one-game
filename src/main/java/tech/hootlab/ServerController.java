@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import tech.hootlab.client.ClientSettings;
 import tech.hootlab.core.Player;
 import tech.hootlab.core.Round;
@@ -12,32 +13,31 @@ import tech.hootlab.core.RoundState;
 public class ServerController {
 
     // For propagating messages to all clients
-    Map<String, SocketMessageSender> clientMap;
-    ServerModel model;
-    Round roundModel;
+    private Map<String, SocketMessageSender> clientMap = new ConcurrentHashMap<>();
+    private ServerModel model;
 
-    public ServerController(Map<String, SocketMessageSender> clientMap, ServerModel model) {
-        this.clientMap = clientMap;
-        this.model = model;
+    public ServerController() {
+        // Create the model locally to avoid to much shared state in multithread environment.
+        this.model = new ServerModel();
 
-        // Attach listeners to the model's round object
-        roundModel = model.getRound();
-
-        roundModel.addPropertyChangeListener(Round.CURRENT_PLAYER_CHANGE_EVENT, evt -> {
+        // Attach listeners to the model's round object.
+        // These generally initiate events which control game flow, but also update clients with
+        // related messages.
+        model.addRoundPropertyChangeListener(Round.CURRENT_PLAYER_CHANGE_EVENT, evt -> {
             sendMessageToAll(SocketMessage.ROUND_PLAYER_CHANGE, (Player) evt.getNewValue());
         });
 
-        roundModel.addPropertyChangeListener(Round.DEALER_CHANGE_EVENT, evt -> {
+        model.addRoundPropertyChangeListener(Round.DEALER_CHANGE_EVENT, evt -> {
             Player newDealer = (Player) evt.getNewValue();
             model.setDealer(newDealer);
         });
 
-        roundModel.addPropertyChangeListener(Round.STATE_CHANGE_EVENT, evt -> {
+        model.addRoundPropertyChangeListener(Round.STATE_CHANGE_EVENT, evt -> {
             RoundState roundState = (RoundState) evt.getNewValue();
             switch (roundState) {
                 case READY:
                     sendMessageToAll(SocketMessage.SET_PLAYERS,
-                            (LinkedList<Player>) roundModel.getPlayerList());
+                            (LinkedList<Player>) model.getRoundPlayerList());
                     sendMessageToAll(SocketMessage.ROUND_STARTED, model.getDealer());
                     break;
 
@@ -48,9 +48,10 @@ public class ServerController {
                 case FINISHED:
                     sendMessageToAll(SocketMessage.ROUND_FINISHED, null);
                     // Kick out any dead-beat no has-moneys.
+                    // This method should be thread safe.
                     List<Player> brokeList = model.removeBrokePlayers();
                     brokeList.forEach(p -> sendMessage(p.getID(), SocketMessage.DISCONNECT, null));
-                    if (model.getPlayerList().size() > 1) {
+                    if (model.getLobbyPlayerList().size() > 1) {
                         model.startNextRound();
                     }
                     break;
@@ -61,11 +62,22 @@ public class ServerController {
         });
     }
 
+    public void addClient(ClientRunner client) {
+        final String clientID = client.getID();
+        clientMap.put(clientID, client);
+        // Send the client their ID on connection
+        sendMessage(clientID, new SocketMessage(SocketMessage.CONNECT, clientID));
+    }
+
     public void addPlayer(String clientID, ClientSettings settings) {
+        // No need to synchronise this, as it's all setup code which only pertains to the
+        // caller... no shared state outside of this method.
+
         // Create player and listen for changes to propogate to clients
         Player player = new Player(clientID, settings.getName(), settings.getTokens());
 
         // Attach listeners to the player object
+        // These generally indicate changes to clients
         player.addPropertyChangeListener(Player.HAND_CHANGE_EVENT, evt -> {
             sendMessageToAll(SocketMessage.HAND_UPDATE, (Player) evt.getSource());
         });
@@ -78,33 +90,35 @@ public class ServerController {
             sendMessageToAll(SocketMessage.STATUS_UPDATE, (Player) evt.getSource());
         });
 
-
         // Send the client their player object.
         sendMessage(clientID, SocketMessage.SET_USER, player);
         // Send the client a list of the current players so they can spectate round in
         // progress
         sendMessage(clientID, SocketMessage.SET_PLAYERS,
-                (LinkedList<Player>) roundModel.getPlayerList());
+                (LinkedList<Player>) model.getRoundPlayerList());
 
+        // This is internally thread-safe. Delays getting here should be tolerable as in the
+        // totally unlikely worst case scenario, the player will miss a round or two, but the
+        // game's logic will be sound. Like all concurrent things... we'll 'eventually' be good.
         model.addPlayer(player);
-
     }
 
-    public synchronized void removePlayer(String clientID) {
+    public void removePlayer(String clientID) {
+        // This is internally thread-safe
         model.removePlayer(clientID);
         clientMap.remove(clientID);
     }
 
     public void hit(String ID) {
-        roundModel.hitWithCurrentPlayer();
+        model.hitWithCurrentPlayer();
     }
 
     public void stick(String ID) {
-        roundModel.stickWithCurrentPlayer();
+        model.stickWithCurrentPlayer();
     }
 
     public void deal(String ID) {
-        roundModel.start();
+        model.deal();
     }
 
     private void sendMessageToAll(String message, Serializable payload) {
@@ -112,9 +126,13 @@ public class ServerController {
     }
 
     private void sendMessageToAll(SocketMessage messageObject) {
-        clientMap.values().forEach(client -> {
-            client.sendMessage(messageObject);
-        });
+        // In spec: Iterators are designed to be only used by one thread at a time
+        // so we lock the map here.
+        synchronized (clientMap) {
+            clientMap.values().forEach(client -> {
+                client.sendMessage(messageObject);
+            });
+        }
     }
 
     private void sendMessage(String ID, String message, Serializable payload) {
@@ -122,6 +140,9 @@ public class ServerController {
     }
 
     private void sendMessage(String ID, SocketMessage messageObject) {
-        clientMap.get(ID).sendMessage(messageObject);
+        SocketMessageSender client = clientMap.get(ID);
+        if (client != null) {
+            client.sendMessage(messageObject);
+        }
     }
 }

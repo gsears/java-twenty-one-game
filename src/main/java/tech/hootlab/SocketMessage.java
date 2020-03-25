@@ -25,8 +25,8 @@ public class SocketMessage implements Serializable {
     public static final String STICK = "STICK";
     public static final String DEAL = "DEAL";
 
-    private String command;
-    private Serializable payload;
+    private final String command;
+    private final Serializable payload;
 
     public SocketMessage(String command, Serializable payload) {
         this.command = command;

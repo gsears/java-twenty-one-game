@@ -3,20 +3,15 @@ package tech.hootlab;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
-import java.util.Map;
 
 public class Server implements Runnable {
     public static final int SERVER_SOCKET = 1337;
 
     private ServerSocket server;
-    private Map<String, SocketMessageSender> clientMap = new HashMap<>();
-
-    // Game items
     private ServerController controller;
 
     public Server() {
-        controller = new ServerController(clientMap, new ServerModel());
+        controller = new ServerController();
         connect();
     }
 
@@ -35,9 +30,9 @@ public class Server implements Runnable {
             try {
 
                 clientSocket = server.accept();
-                ClientRunner client = new ClientRunner(clientSocket, controller);
-                clientMap.put(client.getID(), client);
 
+                ClientRunner client = new ClientRunner(clientSocket, controller);
+                controller.addClient(client);
             } catch (IOException e) {
                 e.printStackTrace();
             }

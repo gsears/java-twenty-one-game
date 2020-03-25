@@ -5,8 +5,11 @@ import java.beans.PropertyChangeSupport;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class Round implements PropertyChangeObservable {
+
+    private final static Logger LOGGER = Logger.getLogger(Round.class.getName());
 
     // Constants
     // ---------
@@ -52,14 +55,12 @@ public class Round implements PropertyChangeObservable {
      * <li>Setting the round state to 'READY'</li>
      * </ul>
      *
-     * This puts the round in a 'ready' state which can be commenced upon the
-     * dealer's 'deal' action.
+     * This puts the round in a 'ready' state which can be commenced upon the dealer's 'deal'
+     * action.
      *
-     * @param initialPlayerList The players from the model to be included in the
-     *                          next round.
+     * @param initialPlayerList The players from the model to be included in the next round.
      * @param dealer            The dealer for the next round.
-     * @param stake             The amount of tokens for each player's stake in this
-     *                          round.
+     * @param stake             The amount of tokens for each player's stake in this round.
      */
     public void reset(List<Player> initialPlayerList, Player dealer, int stake) {
         this.dealer = dealer;
@@ -68,19 +69,23 @@ public class Round implements PropertyChangeObservable {
         this.playerTurnIterator = playerList.iterator();
 
         // No initial player (may not get a turn if natural 21)
-        propertyChangeSupport.firePropertyChange(CURRENT_PLAYER_CHANGE_EVENT, currentPlayer, null);
         this.currentPlayer = null;
+        propertyChangeSupport.firePropertyChange(CURRENT_PLAYER_CHANGE_EVENT, null, null);
 
         this.deck = Deck.getStandardDeck().shuffle();
         setRoundState(RoundState.READY);
     }
 
+    public RoundState getState() {
+        return state;
+    }
+
     /**
-     * This signals the start of a round. All the previous round's player attributes
-     * are reset and cards are dealt.
+     * This signals the start of a round. All the previous round's player attributes are reset and
+     * cards are dealt.
      *
-     * Checks are made to see if any 'natural 21s' result in winners / dealer
-     * changes prior to normal round flow.
+     * Checks are made to see if any 'natural 21s' result in winners / dealer changes prior to
+     * normal round flow.
      */
     public void start() {
         // Player states and hands are cleared here and not on reset.
@@ -98,9 +103,8 @@ public class Round implements PropertyChangeObservable {
     /**
      * Get the list of players participating in this round.
      *
-     * This may not always be synchronised with the model, as users may connect but
-     * to maintain round order integrity, they are only permitted to join at the
-     * beginning of a new round.
+     * This may not always be synchronised with the model, as users may connect but to maintain
+     * round order integrity, they are only permitted to join at the beginning of a new round.
      *
      * @return The list of players currently active in the round.
      */
@@ -111,16 +115,20 @@ public class Round implements PropertyChangeObservable {
     /**
      * This 'removes' a player from the round.
      *
-     * Rather than disconnecting them immediately, it maintains their state so that
-     * game flow is not interrupted and that their tokens can still be won / lost by
-     * remaining players (no rage quitting!).
+     * Rather than disconnecting them immediately, it maintains their state so that game flow is not
+     * interrupted and that their tokens can still be won / lost by remaining players (no rage
+     * quitting!).
      *
      * @param player The player who has been removed from the model.
      */
     public void removePlayer(Player player) {
         removedPlayerList.add(player);
+        LOGGER.info("adding player to removed list: " + player);
+        LOGGER.info("player was dealer: " + dealer);
+        LOGGER.info("round state was: " + state);
 
         if (player.equals(dealer) && state == RoundState.READY) {
+            LOGGER.info("player was dealer, force starting...");
             // Force deal to start if the dealer leaves before the game is started
             start();
         }
@@ -167,9 +175,8 @@ public class Round implements PropertyChangeObservable {
     // communication.
 
     /**
-     * Orders the player list, similar to starting from the dealer's left. This is
-     * required for 'positional priority' if a new dealer is to be determined. And
-     * it's classic blackjack...
+     * Orders the player list, similar to starting from the dealer's left. This is required for
+     * 'positional priority' if a new dealer is to be determined. And it's classic blackjack...
      *
      * @param playerList The original list of players, out of 'round order'.
      * @return The list of players, from the dealer's left -> others -> dealer.
@@ -196,8 +203,8 @@ public class Round implements PropertyChangeObservable {
      * <ul>
      * <li>If the player has been removed from the game, they are skipped.</li>
      *
-     * <li>If the new player is the dealer, and everyone else is bust, the dealer
-     * automatically wins and the end round state is triggered.</li>
+     * <li>If the new player is the dealer, and everyone else is bust, the dealer automatically wins
+     * and the end round state is triggered.</li>
      *
      * <li>If there are no more players, the end round state is triggered.</li>
      * </ul>
@@ -207,7 +214,8 @@ public class Round implements PropertyChangeObservable {
         if (playerTurnIterator.hasNext()) {
             Player previousPlayer = currentPlayer;
             currentPlayer = playerTurnIterator.next();
-            propertyChangeSupport.firePropertyChange(CURRENT_PLAYER_CHANGE_EVENT, previousPlayer, currentPlayer);
+            propertyChangeSupport.firePropertyChange(CURRENT_PLAYER_CHANGE_EVENT, previousPlayer,
+                    currentPlayer);
 
             if (removedPlayerList.contains(currentPlayer)) {
                 setNextPlayer();
@@ -298,7 +306,8 @@ public class Round implements PropertyChangeObservable {
                 Player previousDealer = dealer;
                 // Player with positional priority.
                 dealer = winnerList.get(0);
-                propertyChangeSupport.firePropertyChange(DEALER_CHANGE_EVENT, previousDealer, dealer);
+                propertyChangeSupport.firePropertyChange(DEALER_CHANGE_EVENT, previousDealer,
+                        dealer);
             }
 
             setRoundState(RoundState.FINISHED);

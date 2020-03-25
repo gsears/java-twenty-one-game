@@ -10,7 +10,9 @@ package tech.hootlab.core;
 public class Hand extends Deck implements Comparable<Hand> {
     private static final long serialVersionUID = 1L;
 
-    private static final Object tieLock = new Object();
+    // Uses empty object array, as this is serializable
+    // https://stackoverflow.com/questions/15638972/is-it-okay-to-to-make-the-lock-transient-for-a-serializable-class
+    private static final Object tieLock = new Object[0];
     private int value = 0;
 
     /**

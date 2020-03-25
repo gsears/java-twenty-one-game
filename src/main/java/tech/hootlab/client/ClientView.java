@@ -41,16 +41,20 @@ public class ClientView extends JFrame {
         gamePanel.setLayout(new BoxLayout(gamePanel, BoxLayout.PAGE_AXIS));
 
         gameContainer = new JScrollPane(gamePanel);
-        gameContainer.getViewport()
-                .setPreferredSize(new Dimension(WINDOW_WIDTH, WINDOW_HEIGHT - PLAYER_SECTION_HEIGHT));
+        gameContainer.getViewport().setPreferredSize(
+                new Dimension(WINDOW_WIDTH, WINDOW_HEIGHT - PLAYER_SECTION_HEIGHT));
 
         // Create a panel for storing user
         userPanel = new JPanel(new BorderLayout());
-        userPanel.setMinimumSize(new Dimension(WINDOW_WIDTH, PLAYER_SECTION_HEIGHT));
+        Dimension userPanelDimension = new Dimension(WINDOW_WIDTH, PLAYER_SECTION_HEIGHT);
+        userPanel.setMinimumSize(userPanelDimension);
+        userPanel.setPreferredSize(userPanelDimension);
 
         // Create user view and control panel
         userView = new PlayerView(null, WINDOW_WIDTH, PLAYER_SECTION_HEIGHT);
         userControlView = new PlayerControlView(controller);
+
+
 
         userPanel.add(userView, BorderLayout.CENTER);
         userPanel.add(userControlView, BorderLayout.SOUTH);
