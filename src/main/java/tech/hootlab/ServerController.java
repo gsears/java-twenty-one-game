@@ -12,17 +12,18 @@ import tech.hootlab.core.RoundState;
 
 public class ServerController {
 
+    // This is hard coded, but could be modified in later versions.
+    public final int ROUND_STAKE = 20;
+
     // For propagating messages to all clients
     private Map<String, SocketMessageSender> clientMap = new ConcurrentHashMap<>();
     private ServerModel model;
 
     public ServerController() {
         // Create the model locally to avoid to much shared state in multithread environment.
-        this.model = new ServerModel();
+        this.model = new ServerModel(ROUND_STAKE);
 
         // Attach listeners to the model's round object.
-        // These generally initiate events which control game flow, but also update clients with
-        // related messages.
         model.addRoundPropertyChangeListener(Round.CURRENT_PLAYER_CHANGE_EVENT, evt -> {
             sendMessageToAll(SocketMessage.ROUND_PLAYER_CHANGE, (Player) evt.getNewValue());
         });
@@ -37,6 +38,7 @@ public class ServerController {
             switch (roundState) {
                 case READY:
                     sendMessageToAll(SocketMessage.SET_PLAYERS,
+                            // Cast to LinkedList as this is definitiely synchronised.
                             (LinkedList<Player>) model.getRoundPlayerList());
                     sendMessageToAll(SocketMessage.ROUND_STARTED, model.getDealer());
                     break;
@@ -48,12 +50,8 @@ public class ServerController {
                 case FINISHED:
                     sendMessageToAll(SocketMessage.ROUND_FINISHED, null);
                     // Kick out any dead-beat no has-moneys.
-                    // This method should be thread safe.
                     List<Player> brokeList = model.removeBrokePlayers();
                     brokeList.forEach(p -> sendMessage(p.getID(), SocketMessage.DISCONNECT, null));
-                    if (model.getLobbyPlayerList().size() > 1) {
-                        model.startNextRound();
-                    }
                     break;
 
                 default:

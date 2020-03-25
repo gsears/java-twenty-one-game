@@ -76,6 +76,8 @@ public class Round implements PropertyChangeObservable {
         setRoundState(RoundState.READY);
     }
 
+
+
     public RoundState getState() {
         return state;
     }
@@ -123,12 +125,8 @@ public class Round implements PropertyChangeObservable {
      */
     public void removePlayer(Player player) {
         removedPlayerList.add(player);
-        LOGGER.info("adding player to removed list: " + player);
-        LOGGER.info("player was dealer: " + dealer);
-        LOGGER.info("round state was: " + state);
 
         if (player.equals(dealer) && state == RoundState.READY) {
-            LOGGER.info("player was dealer, force starting...");
             // Force deal to start if the dealer leaves before the game is started
             start();
         }

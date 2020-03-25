@@ -5,54 +5,62 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Logger;
 import tech.hootlab.core.Player;
 import tech.hootlab.core.Round;
 import tech.hootlab.core.RoundState;
 
 public class ServerModel {
 
-    private final static Logger LOGGER = Logger.getLogger(ServerModel.class.getName());
+    List<Player> lobbyPlayerList = new LinkedList<>();
 
-    public final int ROUND_STAKE = 20;
+    // Due to its complexity and interrelated state, this is NOT thread safe.
+    // It's locked down in this class.
+    private Round round = new Round();
 
-    List<Player> playerList = new LinkedList<>();
-    Round round = new Round();
+    private final int stake;
 
     // Store a reference to the current dealer and next dealer.
     // If a dealer leaves the game, play automatically continues until the next round when.
-    Player dealer;
+    private Player dealer;
+    private final Object dealerLock = new Object();
+
+    public ServerModel(int stake) {
+        this.stake = stake;
+    }
 
     public List<Player> getRoundPlayerList() {
-        return round.getPlayerList();
+        // Return read only list from round. Internal players are thread-safe.
+        // (Round deals with its own state and is confined in this class).
+        return Collections.unmodifiableList(round.getPlayerList());
     }
 
     public List<Player> getLobbyPlayerList() {
-        return playerList;
+        // Return read only list. Internal players are thread-safe.
+        return Collections.unmodifiableList(lobbyPlayerList);
     }
 
     // Players added and removed from the game should be added on next round.
     public void addPlayer(Player player) {
-        synchronized (playerList) {
-            playerList.add(player);
+        synchronized (lobbyPlayerList) {
+            lobbyPlayerList.add(player);
 
             // If it's the first player, they're the dealer!
-            if (playerList.size() == 1) {
+            if (lobbyPlayerList.size() == 1) {
                 setDealer(player);
             }
 
             // We've got enough players to play
-            if (playerList.size() == 2) {
+            if (lobbyPlayerList.size() == 2) {
                 startNextRound();
             }
         }
     }
 
     public void removePlayer(String ID) {
-        synchronized (playerList) {
+        synchronized (lobbyPlayerList) {
             // Players are comparable by ID
             Player playerToRemove = null;
-            Iterator<Player> iterator = playerList.iterator();
+            Iterator<Player> iterator = lobbyPlayerList.iterator();
             while (playerToRemove == null && iterator.hasNext()) {
                 Player player = iterator.next();
                 if (ID.equals(player.getID())) {
@@ -64,73 +72,85 @@ public class ServerModel {
     }
 
     public void removePlayer(Player player) {
-        LOGGER.info("Removing player from model");
-        synchronized (playerList) {
-            playerList.remove(player);
-
-            if (dealer.equals(player) && playerList.size() > 0) {
-                dealer = playerList.get(0);
+        synchronized (lobbyPlayerList) {
+            lobbyPlayerList.remove(player);
+            int lobbySize = lobbyPlayerList.size();
+            if (dealer.equals(player) && lobbySize > 0) {
+                dealer = lobbyPlayerList.get(0);
             }
-        }
 
-        // This needs to be done here because it is contingent on the dealer
-        if (round != null) {
-            LOGGER.info("Removing player from round");
-            round.removePlayer(player); // Handled separately for scoring and logic reasons
-        }
+            synchronized (round) {
+                // RoundPlayer removals handled separately for scoring and logic reasons
+                round.removePlayer(player);
 
-        // Restart round if finished...
-        if (round.getState() == RoundState.FINISHED && playerList.size() > 1) {
-            startNextRound();
+                // Restart round if finished...
+                // Stays in lock because this is contingent on round size
+                if (round.getState() == RoundState.FINISHED && lobbyPlayerList.size() > 1) {
+                    startNextRound();
+                }
+            }
         }
     }
 
     public List<Player> removeBrokePlayers() {
         List<Player> eliminatedPlayers = new LinkedList<>();
-        synchronized (playerList) {
-            for (Player player : playerList) {
+
+        synchronized (lobbyPlayerList) {
+            for (Player player : lobbyPlayerList) {
                 if (player.getTokens() == 0) {
                     eliminatedPlayers.add(player);
                 }
             }
-
             eliminatedPlayers.forEach(player -> removePlayer(player));
         }
 
-        // Return immutable list for thread safety
+        // Return immutable list for safety
         return Collections.unmodifiableList(eliminatedPlayers);
 
     }
 
     public Player getDealer() {
-        return dealer;
+        synchronized (dealerLock) {
+            return dealer;
+        }
     }
 
     public void setDealer(Player player) {
-        dealer = player;
-        LOGGER.info("Next dealer is: " + player);
+        synchronized (dealerLock) {
+            dealer = player;
+        }
     }
 
     // Gameplay functions
 
     public void startNextRound() {
-        // Send an immutable version of the current player list to initialise a round
-        round.reset(Collections.unmodifiableList(playerList), dealer, ROUND_STAKE);
+        // Passes lobbyPlayerList as unmodifiable, just in case any future round changes risk
+        // mutation.
+        synchronized (round) {
+            round.reset(Collections.unmodifiableList(lobbyPlayerList), dealer, stake);
+        }
     }
 
     public void deal() {
-        round.start();
+        synchronized (round) {
+            round.start();
+        }
     }
 
     public void hitWithCurrentPlayer() {
-        round.hitWithCurrentPlayer();
+        synchronized (round) {
+            round.hitWithCurrentPlayer();
+        }
     }
 
     public void stickWithCurrentPlayer() {
-        round.stickWithCurrentPlayer();
+        synchronized (round) {
+            round.stickWithCurrentPlayer();
+        }
     }
 
     // Add Round listeners here
+    // These are done in the model constructor, so don't need thread safety yet.
     public void addRoundPropertyChangeListener(String propertyName, PropertyChangeListener pcl) {
         round.addPropertyChangeListener(propertyName, pcl);
     }
