@@ -16,17 +16,17 @@ import tech.hootlab.core.CardSuits;
 public class CardView extends JPanel {
     private static final long serialVersionUID = 1L;
 
-    String SPADES_STRING = "\u2660";
-    String CLUBS_STRING = "\u2663";
-    String HEARTS_STRING = "\u2665";
-    String DIAMONDS_STRING = "\u2666";
+    private final String SPADES_STRING = "\u2660";
+    private final String CLUBS_STRING = "\u2663";
+    private final String HEARTS_STRING = "\u2665";
+    private final String DIAMONDS_STRING = "\u2666";
 
-    String ACE_STRING = "A";
-    String JACK_STRING = "J";
-    String QUEEN_STRING = "Q";
-    String KING_STRING = "K";
+    private final String ACE_STRING = "A";
+    private final String JACK_STRING = "J";
+    private final String QUEEN_STRING = "Q";
+    private final String KING_STRING = "K";
 
-    Card card;
+    private final Card card;
 
     CardView(Card card) {
 
