@@ -13,6 +13,9 @@ import tech.hootlab.core.Card;
 import tech.hootlab.core.CardRanks;
 import tech.hootlab.core.CardSuits;
 
+/**
+ * A JPanel version of a playing card.
+ */
 public class CardView extends JPanel {
     private static final long serialVersionUID = 1L;
 
@@ -28,10 +31,10 @@ public class CardView extends JPanel {
 
     private final Card card;
 
-    CardView(Card card) {
+    public CardView(Card card) {
 
         this.card = card;
-        // setPreferredSize(new Dimension(width, height));
+
         setBackground(Color.WHITE);
         setBorder(BorderFactory.createEtchedBorder(Color.BLACK, Color.GRAY));
 
