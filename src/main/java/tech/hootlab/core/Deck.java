@@ -6,25 +6,24 @@ import java.util.LinkedList;
 import java.util.List;
 
 /*
- * Deck.java Gareth Sears - 2493194S
- */
-
-/**
- * A class representing a collection of cards. Note: this doesn't necessarily mean the full '52'
- * cards, rather a 'collection' of cards of any size.
+ * Deck.java
+ *
+ * Gareth Sears - 2493194S
+ *
+ * A class representing a collection of cards. Note: this doesn't necessarily mean the standard '52'
+ * card deck, rather a 'collection' of cards of any size / combination.
+ *
+ * Designed to be thread-safe.
  */
 public class Deck implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    // Define as linked list so we can use list (shuffle) and queue (poll)
-    // functionality.
+    // Define as linked list so we can use list (shuffle) and queue (poll) functionality.
 
     // This is NOT thread safe, so all operations relating to this object must
     // be via this class and synchronized against this object.
-    // This list should ONLY be returned as an immutable version. I imagine this is
-    // OK, as the game is turn based and each thread is responsible for updates only
-    // on it's own turn, so everything should be eventually consistant in the right
-    // timeframe.
+
+    // This list is ONLY returned as an immutable list via collections to ensure thread safety.
     LinkedList<Card> cardList = new LinkedList<>();
 
     /**

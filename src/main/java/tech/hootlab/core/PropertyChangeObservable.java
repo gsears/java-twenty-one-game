@@ -2,8 +2,13 @@ package tech.hootlab.core;
 
 import java.beans.PropertyChangeListener;
 
-/**
- * An interface which allows RoundListeners to be added to the Round.
+/*
+ * PropertyChangeObservable.java
+ *
+ * Gareth Sears - 2493194S
+ *
+ * An interface which is used to guarantee an implementation of PropertyChangeSupport on the class.
+ * Provides methods for adding / removing listeners.
  */
 public interface PropertyChangeObservable {
 

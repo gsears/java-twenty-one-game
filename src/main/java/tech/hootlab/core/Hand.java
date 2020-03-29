@@ -1,11 +1,13 @@
 package tech.hootlab.core;
 
 /*
- * Hand.java Gareth Sears - 2493194S
- */
-
-/**
+ * Hand.java
+ *
+ * Gareth Sears - 2493194S
+ *
  * A class which represents a players hand.
+ *
+ * Designed to be thread-safe.
  */
 public class Hand extends Deck implements Comparable<Hand> {
     private static final long serialVersionUID = 1L;

@@ -2,8 +2,20 @@ package tech.hootlab;
 
 import java.io.Serializable;
 
+/*
+ * SocketMessage.java
+ *
+ * Gareth Sears - 2493194S
+ *
+ * This is an immutable wrapper class used for API messages and their respective payloads between
+ * the server and the client.
+ *
+ * Each API message has a static class variable representing a particular message.
+ *
+ * For efficiency, it could have used ints, but strings helped with message debugging and it is also
+ * a convention used by PropertyChangeControl. A possible future change.
+ */
 public class SocketMessage implements Serializable {
-
     private static final long serialVersionUID = 1L;
 
     // This value is a 'poison pill' used to close blocking queues. (See Java BlockingQueue docs).

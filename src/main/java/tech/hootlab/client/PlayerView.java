@@ -1,16 +1,21 @@
 package tech.hootlab.client;
 
 import java.awt.BorderLayout;
-import java.util.logging.Logger;
 import javax.swing.JPanel;
 import tech.hootlab.core.Hand;
 import tech.hootlab.core.Player;
 import tech.hootlab.core.PlayerState;
 
+/*
+ * PlayerView.java
+ *
+ * Gareth Sears - 2493194S
+ *
+ * A JPanel which composes the PlayerHandView and the PlayerInfoView to a reusable component which
+ * displays all required player state.
+ */
 public class PlayerView extends JPanel {
     private static final long serialVersionUID = 1L;
-
-    private final static Logger LOGGER = Logger.getLogger(PlayerView.class.getName());
 
     private PlayerInfoView playerInfoView;
     private PlayerHandView playerHandView;
@@ -46,7 +51,8 @@ public class PlayerView extends JPanel {
 
     public void setCurrentPlayer(boolean isCurrentPlayer) {
         playerInfoView.setCurrentPlayer(isCurrentPlayer);
-        // Auto scroll to show the current player
+        // Auto scroll to show the current player if inside a scroll panel.
+        // Who says you can't have UX in swing?
         if (isCurrentPlayer) {
             this.scrollRectToVisible(this.getBounds());
         }
@@ -57,14 +63,12 @@ public class PlayerView extends JPanel {
     }
 
     public void setStatus(PlayerState status) {
-        LOGGER.info("Setting status: " + status);
         switch (status) {
             case PLAYING:
                 playerInfoView.resetStatus();
                 break;
 
             case LOSER:
-                LOGGER.info("Setting Loser!");
                 playerInfoView.setLoser();
                 break;
 
@@ -77,17 +81,4 @@ public class PlayerView extends JPanel {
                 break;
         }
     }
-
-    // public void render() {
-    // if (player != null) {
-    // // Render info
-    // playerInfoView.render();
-
-    // // Render cards
-    // playerHandView.setHand(player.getHand());
-    // } else {
-
-    // }
-
-    // }
 }

@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.InputMismatchException;
 import java.util.Scanner;
-import java.util.logging.LogManager;
-import java.util.logging.Logger;
 import javax.swing.SwingUtilities;
 import tech.hootlab.Server;
 
@@ -18,7 +16,6 @@ import tech.hootlab.Server;
  * then opens a swing window for their game session.
  */
 public class Client {
-    private final static Logger LOGGER = Logger.getLogger(Client.class.getName());
 
     private static final String NAME_PROMPT_MESSAGE = "Please enter your name:";
     private static final String TOKEN_PROMPT_MESSAGE = "How many tokens have you got?";
@@ -28,12 +25,12 @@ public class Client {
     private ClientView view;
     private Socket server;
 
+    // Singleton as this is executed in main
     private Client() {
 
         try {
             // Connect
             server = new Socket("127.0.0.1", Server.SERVER_SOCKET);
-            LOGGER.info("Connected to server: " + server);
 
             // Prompt user for their details. Could be put in GUI, but swing is painful enough.
             Scanner scanner = new Scanner(System.in);
@@ -64,13 +61,11 @@ public class Client {
 
             // Create a settings object which is to be passed to the server by the controller.
             // Essentially this is a client 'model'.
-            LOGGER.info(String.format("User configuration: {name: %s, tokens: $d}", name, tokens));
             ClientSettings userSettings = new ClientSettings(name, tokens);
 
             // Setup the window, MVC style.
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
-                    LOGGER.info("Initialising client MVC");
                     controller = new ClientController(server, userSettings);
                     view = new ClientView(controller);
                     controller.setView(view);
@@ -84,8 +79,6 @@ public class Client {
     }
 
     public static void main(String[] args) {
-        // Comment out to enable logs
-        LogManager.getLogManager().reset();
         new Client();
     }
 }

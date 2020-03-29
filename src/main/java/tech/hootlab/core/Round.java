@@ -6,6 +6,20 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+/*
+ * Round.java
+ *
+ * Gareth Sears - 2493194S
+ *
+ * A class which encapsulates the game logic for 21 as it relates to each round. This class is
+ * designed to provide updates to its state via the observer pattern, so only key interaction points
+ * are provided to the controller.
+ *
+ * This is NOT threadsafe in the least, because of the complexity of its state. However, the items
+ * that it passes via its firePropertyChange actions ARE threadsafe. It is the owning class's
+ * responsibility to ensure appropriate locking on this class. In this case, this is the ServerModel
+ * class.
+ */
 public class Round implements PropertyChangeObservable {
 
     // Constants
@@ -72,8 +86,6 @@ public class Round implements PropertyChangeObservable {
         this.deck = Deck.getStandardDeck().shuffle();
         setRoundState(RoundState.READY);
     }
-
-
 
     public RoundState getState() {
         return state;

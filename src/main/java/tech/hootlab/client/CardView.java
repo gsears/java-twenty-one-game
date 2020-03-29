@@ -13,7 +13,11 @@ import tech.hootlab.core.Card;
 import tech.hootlab.core.CardRanks;
 import tech.hootlab.core.CardSuits;
 
-/**
+/*
+ * CardView.java
+ *
+ * Gareth Sears - 2493194S
+ *
  * A JPanel version of a playing card.
  */
 public class CardView extends JPanel {

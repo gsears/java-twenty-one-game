@@ -17,6 +17,14 @@ import javax.swing.JSplitPane;
 import javax.swing.ScrollPaneConstants;
 import tech.hootlab.core.Player;
 
+/*
+ * ClientView.java
+ *
+ * Gareth Sears - 2493194S
+ *
+ * The main view component for the client. Creates the frame and composes the other view classes
+ * into appropriate panels. Methods are delegated to the appropriate component.
+ */
 public class ClientView extends JFrame {
     private static final long serialVersionUID = 1L;
 
@@ -42,6 +50,7 @@ public class ClientView extends JFrame {
         gamePanel = new JPanel();
         gamePanel.setLayout(new BoxLayout(gamePanel, BoxLayout.PAGE_AXIS));
 
+        // This is scrollable because of an indefinite number of players being able to join.
         gameContainer = new JScrollPane(gamePanel);
         gameContainer.getVerticalScrollBar().setPreferredSize(new Dimension(SCROLLBAR_WIDTH, 0));
         gameContainer.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
@@ -54,17 +63,17 @@ public class ClientView extends JFrame {
         userPanel.setMinimumSize(userPanelDimension);
         userPanel.setPreferredSize(userPanelDimension);
 
-        // Create user view and control panel
+        // Create user view and control panel within the previous panel.
         userView = new PlayerView(null, WINDOW_WIDTH, PLAYER_SECTION_HEIGHT);
         userControlView = new PlayerControlView(controller);
 
         userPanel.add(userView, BorderLayout.CENTER);
         userPanel.add(userControlView, BorderLayout.SOUTH);
 
-        // Divide other players' views from user view
+        // Divide other players' views from user view, this is adjustable via SplitPane
         JSplitPane pane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, gameContainer, userPanel);
 
-        // Handle quit programatically (for disconnecting users when they drop tokens)
+        // Handle quit programatically in the controller.
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         this.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent winEvt) {
@@ -82,11 +91,11 @@ public class ClientView extends JFrame {
 
     private void render(JComponent component) {
         component.repaint();
-        // Revalidate is needed, because we're adding JPanels on the fly.
+        // Revalidate is needed when we render, because we're adding JPanels on the fly.
         component.revalidate();
     }
 
-    // Player view actions
+    // Player View methods
 
     public void setUser(Player player) {
         userView.setPlayer(player);
@@ -129,7 +138,7 @@ public class ClientView extends JFrame {
         playerView.setStatus(player.getStatus());
     }
 
-    // Round Actions
+    // Round Action Methods
 
     public void setDealer(Player player) {
         String playerID = player.getID();

@@ -9,9 +9,24 @@ import tech.hootlab.core.Player;
 import tech.hootlab.core.Round;
 import tech.hootlab.core.RoundState;
 
+/*
+ * ServerModel.java
+ *
+ * Gareth Sears - 2493194S
+ *
+ * This class acts as an intermediary between the round (game logic) and the various players
+ * (connections). It ensures appropriate locking on the Round object and its state is designed to
+ * act as a 'lobby', so when players connect they join at the start of the the next round. This
+ * avoids tricky ordering problems between players.
+ *
+ * It also manages round and dealer state when players connect / disconnect.
+ *
+ * It is designed to be threadsafe, as it is shared between multiple client connections. Thus, it
+ * only returns immutable lists for processing (which in turn contain only threadsafe classes).
+ */
 public class ServerModel {
 
-    List<Player> lobbyPlayerList = new LinkedList<>();
+    private List<Player> lobbyPlayerList = new LinkedList<>();
 
     // Due to its complexity and interrelated state, this is NOT thread safe.
     // It's locked down in this class.

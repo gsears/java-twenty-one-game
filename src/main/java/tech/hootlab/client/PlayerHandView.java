@@ -3,21 +3,20 @@ package tech.hootlab.client;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Point;
-import java.util.logging.Logger;
 import javax.swing.JLayeredPane;
 import tech.hootlab.core.Card;
 import tech.hootlab.core.Hand;
 
-/**
- * A class which displays a hand on the player's 'table'.
+/*
+ * PlayerHandView.java
  *
- * Inherits from JLayeredPane to allow cards to overlap. Because nice looking things get good marks,
- * right?
+ * Gareth Sears - 2493194S
+ *
+ * This is a LayeredPane which allows overlapping card displays. Controls the sizing of cards so
+ * that they are appropriately proportioned. Also handles displaying the cards from a Hand object.
  */
 public class PlayerHandView extends JLayeredPane {
     private static final long serialVersionUID = 1L;
-
-    private final static Logger LOGGER = Logger.getLogger(PlayerHandView.class.getName());
 
     final private Color DARK_GREEN = new Color(0, 153, 0);
 
@@ -61,7 +60,6 @@ public class PlayerHandView extends JLayeredPane {
     }
 
     public void setHand(Hand hand) {
-        LOGGER.info("Setting hand, with cards:" + hand.getCardList());
         clearCards();
 
         hand.getCardList().stream().forEach(card -> {
@@ -70,7 +68,6 @@ public class PlayerHandView extends JLayeredPane {
     }
 
     private void addCard(Card card) {
-        LOGGER.info("Adding card");
         CardView cardView = new CardView(card);
         int cardWidth = 2 * widthOffsetUnit;
 
@@ -91,7 +88,6 @@ public class PlayerHandView extends JLayeredPane {
      * Removes the cards in a player's hand.
      */
     private void clearCards() {
-        LOGGER.info("Clearing cards");
         // Reset the offset.
         offset = new Point(widthOffsetUnit, heightOffsetUnit);
         removeAll();

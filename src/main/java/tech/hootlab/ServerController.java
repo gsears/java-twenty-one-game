@@ -9,6 +9,17 @@ import tech.hootlab.core.Player;
 import tech.hootlab.core.Round;
 import tech.hootlab.core.RoundState;
 
+/*
+ * ServerController.java
+ *
+ * Gareth Sears - 2493194S
+ *
+ * This class is responsible for routing messages between the clients and the model. As the model is
+ * designed to be thread-safe, little synchronisation is done here, but it does use a
+ * ConcurrentHashMap to keep track of clients.
+ *
+ * It manages most of its client interactions by listening to the model.
+ */
 public class ServerController {
 
     // This is hard coded, but could be modified in later versions.

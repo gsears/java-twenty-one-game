@@ -5,7 +5,11 @@ import java.beans.PropertyChangeSupport;
 import java.io.Serializable;
 import java.util.UUID;
 
-/**
+/*
+ * Player.java
+ *
+ * Gareth Sears - 2493194S
+ *
  * A class representing the state of a player, their hand, and their tokens.
  *
  * The class is observable using the Java Beans property change listener (thread safe), with static
@@ -18,6 +22,8 @@ import java.util.UUID;
  * ease in making the class thread-safe, as we want to fire event changes outside of syncrhonised
  * blocks to prevent potential deadlocks (i.e. if another thread tried accessing the object in the
  * callback function). This could potentially be improved going forward.
+ *
+ * Designed to be thread-safe, so can be passed around.
  */
 public class Player implements PropertyChangeObservable, Serializable {
     private static final long serialVersionUID = 1L;

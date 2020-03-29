@@ -4,6 +4,14 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+/*
+ * Server.java
+ *
+ * Gareth Sears - 2493194S
+ *
+ * This class initialises the server socket and creates appropriate ClientRunners for each
+ * connection.
+ */
 public class Server implements Runnable {
     public static final int SERVER_SOCKET = 1337;
 

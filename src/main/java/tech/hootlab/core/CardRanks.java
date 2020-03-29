@@ -2,10 +2,8 @@ package tech.hootlab.core;
 
 /*
  * Ranks.java Gareth Sears - 2493194S
- */
-
-/**
- * An enum representing the different possible card ranks.
+ *
+ * An enum representing the different possible card ranks. This is immutable, therefore threadsafe.
  */
 public enum CardRanks {
     ACE(11), TWO(2), THREE(3), FOUR(4), FIVE(5), SIX(6), SEVEN(7), EIGHT(8), NINE(9), TEN(10), JACK(

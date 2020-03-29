@@ -4,10 +4,8 @@ import java.io.Serializable;
 
 /*
  * Card.java Gareth Sears - 2493194S
- */
-
-/**
- * A class representing a playing card.
+ *
+ * A class representing a playing card. This is immutable, thus threadsafe.
  */
 public class Card implements Serializable {
     private static final long serialVersionUID = 1L;

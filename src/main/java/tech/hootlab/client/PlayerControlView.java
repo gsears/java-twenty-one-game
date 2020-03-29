@@ -9,18 +9,27 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+/*
+ * PlayerControlView.java
+ *
+ * Gareth Sears - 2493194S
+ *
+ * This is a panel which contains the message display as well as buttons for user input.
+ */
 public class PlayerControlView extends JPanel {
     private static final long serialVersionUID = 1L;
 
     private static final int HORIZONTAL_PADDING = 10;
 
-    JLabel messageDisplay;
-    JButton hitButton;
-    JButton stickButton;
-    JButton dealButton;
+    private JLabel messageDisplay;
+    private JButton hitButton;
+    private JButton stickButton;
+    private JButton dealButton;
 
     /**
      * Creates a button panel which is used to control a player's turn.
+     *
+     * Delegates action responses to the controller.
      *
      * @param controller The controller.
      */

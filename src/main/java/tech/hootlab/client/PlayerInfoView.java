@@ -5,6 +5,14 @@ import javax.swing.*;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+/*
+ * PlayerInfoView.java
+ *
+ * Gareth Sears - 2493194S
+ *
+ * This is a simple JPanel which displays the player state and if they are the dealer / current
+ * player.
+ */
 public class PlayerInfoView extends JPanel {
     private static final long serialVersionUID = 1L;
 

@@ -10,6 +10,15 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import tech.hootlab.client.ClientSettings;
 
+/*
+ * ClientRunner.java
+ *
+ * Gareth Sears - 2493194S
+ *
+ * This class manages each client's read and write thread and provides appropriate methods for
+ * sending messages to the client as well as filtering the clients' messages and passing them to the
+ * controller.
+ */
 public class ClientRunner {
 
     private final Socket client;
@@ -99,6 +108,7 @@ public class ClientRunner {
 
             } catch (EOFException e) {
                 controller.removePlayer(clientID);
+                // Handles disconnecting both the read and write threads.
                 disconnect();
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
@@ -110,6 +120,7 @@ public class ClientRunner {
 
     // Private class so we can access instance variables
     private class ClientWriter implements Runnable {
+        // Uses a blocking queue as may receive messages from other threads sharing the controller.
         private BlockingQueue<SocketMessage> messageQueue = new LinkedBlockingQueue<>();
         private ObjectOutputStream objectOutputStream;
 

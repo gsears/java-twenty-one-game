@@ -9,7 +9,6 @@ import java.net.Socket;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.logging.Logger;
 import javax.swing.SwingWorker;
 import tech.hootlab.SocketMessage;
 import tech.hootlab.core.Player;
@@ -23,7 +22,6 @@ import tech.hootlab.core.Player;
  *
  */
 public class ClientController {
-    private final static Logger LOGGER = Logger.getLogger(ClientController.class.getName());
 
     // Display Messages
     // Could have been created in view, but this was a design decision for a more agnostic view.
@@ -164,8 +162,6 @@ public class ClientController {
          * Handles messages on the Swing thread.
          */
         protected void process(List<SocketMessage> messageList) {
-            LOGGER.info("Processing message: " + messageList);
-            // process all messages
             for (SocketMessage message : messageList) {
                 handleServerMessage(message);
             }
