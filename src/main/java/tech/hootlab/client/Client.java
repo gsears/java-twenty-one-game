@@ -35,8 +35,7 @@ public class Client {
             server = new Socket("127.0.0.1", Server.SERVER_SOCKET);
             LOGGER.info("Connected to server: " + server);
 
-            // Prompt user for their details
-            // TODO: For future, could put in GUI.
+            // Prompt user for their details. Could be put in GUI, but swing is painful enough.
             Scanner scanner = new Scanner(System.in);
             System.out.println(NAME_PROMPT_MESSAGE);
             String name = scanner.nextLine();

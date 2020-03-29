@@ -177,6 +177,7 @@ public class ClientController {
          *
          * @param message The API message
          */
+        @SuppressWarnings("unchecked")
         protected void handleServerMessage(SocketMessage message) {
             String command = message.getCommand();
             switch (command) {

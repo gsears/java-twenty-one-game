@@ -5,13 +5,11 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Logger;
 import tech.hootlab.core.Player;
 import tech.hootlab.core.Round;
 import tech.hootlab.core.RoundState;
 
 public class ServerModel {
-    private final static Logger LOGGER = Logger.getLogger(ServerModel.class.getName());
 
     List<Player> lobbyPlayerList = new LinkedList<>();
 
