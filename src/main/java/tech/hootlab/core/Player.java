@@ -4,12 +4,23 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.Serializable;
 import java.util.UUID;
-import java.util.logging.Logger;
 
+/**
+ * A class representing the state of a player, their hand, and their tokens.
+ *
+ * The class is observable using the Java Beans property change listener (thread safe), with static
+ * properties containing the property change events. This allows the controller to easily keep track
+ * of state changes. However, in multithread environments there is no guarantee of the order of
+ * updates. That said, this shouldn't matter as far as user experience goes, as the end result will
+ * be the same.
+ *
+ * The current implementation always fires update events with the old value as 'null'. This was for
+ * ease in making the class thread-safe, as we want to fire event changes outside of syncrhonised
+ * blocks to prevent potential deadlocks (i.e. if another thread tried accessing the object in the
+ * callback function). This could potentially be improved going forward.
+ */
 public class Player implements PropertyChangeObservable, Serializable {
     private static final long serialVersionUID = 1L;
-
-    private final static Logger LOGGER = Logger.getLogger(Player.class.getName());
 
     private final String ID;
     private final String name;
@@ -18,17 +29,13 @@ public class Player implements PropertyChangeObservable, Serializable {
     private Hand hand;
     private PlayerState status = PlayerState.PLAYING;
 
-
     // Uses empty object array, as this is serializable
     // https://stackoverflow.com/questions/15638972/is-it-okay-to-to-make-the-lock-transient-for-a-serializable-class
     private final Object tokenLock = new Object[0];
     private final Object handLock = new Object[0];
     private final Object statusLock = new Object[0];
 
-    // Observable attributes
-    // Class is observable to allow for easier tracking of state to transmit to
-    // clients. The following are property change messages associated with the
-    // events.
+    // Observable properties
     public static final String HAND_CHANGE_EVENT = "PLAYER_HAND_CHANGE";
     public static final String TOKEN_CHANGE_EVENT = "PLAYER_TOKEN_CHANGE";
     public static final String STATUS_CHANGE_EVENT = "PLAYER_STATUS_CHANGE";
@@ -36,6 +43,7 @@ public class Player implements PropertyChangeObservable, Serializable {
     private PropertyChangeSupport propertyChangeSupport;
 
     public Player(String name, int initialTokens) {
+        // Each player is identified by a unique ID
         this(UUID.randomUUID().toString(), name, initialTokens);
     }
 
@@ -111,7 +119,7 @@ public class Player implements PropertyChangeObservable, Serializable {
         // Do nothing if the target player is the same as this player
         if (!target.equals(this)) {
 
-            // A helper class which embeds the transfer function
+            // A helper class which embeds the transfer function.
             // This pattern is used in the Java Concurrency in Practice book
 
             class Helper {
@@ -128,8 +136,8 @@ public class Player implements PropertyChangeObservable, Serializable {
             }
 
             // As we are using nested locks, we need to take into account the case where
-            // the transferTokens function is called simultaneously, but with the Player
-            // objects reversed (this -> target, and vice versa). Therefore, we need to
+            // the transferTokens function is called simultaneously by different threads, but with
+            // the Player objects reversed (this -> target, and vice versa). Therefore, we need to
             // induce order on the locks. We do this by ordering the locks via the players'
             // immutable ID values.
 
@@ -151,12 +159,9 @@ public class Player implements PropertyChangeObservable, Serializable {
             target.firePropertyChange(TOKEN_CHANGE_EVENT, null, target.tokens);
             firePropertyChange(TOKEN_CHANGE_EVENT, null, tokens);
         }
-
-
     }
 
-    // So other player classes can access fire property change (for example, with
-    // transfer tokens)
+    // PropertyChangeObservable implementations
     private void firePropertyChange(String propertyName, Object oldValue, Object newValue) {
         propertyChangeSupport.firePropertyChange(propertyName, oldValue, newValue);
     }
@@ -183,7 +188,7 @@ public class Player implements PropertyChangeObservable, Serializable {
 
     @Override
     public boolean equals(Object obj) {
-        // ID is immutable, so threadsafe.
+        // ID is immutable, so threadsafe comparisons.
         if (obj instanceof Player) {
             return ID.equals(((Player) obj).getID());
         } else if (obj instanceof String) {
@@ -192,7 +197,5 @@ public class Player implements PropertyChangeObservable, Serializable {
         } else {
             return false;
         }
-
     }
-
 }
