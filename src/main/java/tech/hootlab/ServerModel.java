@@ -5,13 +5,11 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Logger;
 import tech.hootlab.core.Player;
 import tech.hootlab.core.Round;
 import tech.hootlab.core.RoundState;
 
 public class ServerModel {
-    private final static Logger LOGGER = Logger.getLogger(ServerModel.class.getName());
 
     List<Player> lobbyPlayerList = new LinkedList<>();
 
@@ -69,39 +67,32 @@ public class ServerModel {
                     playerToRemove = player;
                 }
             }
-
-
             removePlayer(playerToRemove);
-
         }
     }
 
     public void removePlayer(Player player) {
-        if (player != null) {
-            synchronized (lobbyPlayerList) {
-                lobbyPlayerList.remove(player);
-                int lobbySize = lobbyPlayerList.size();
-                if (dealer.equals(player) && lobbySize > 0) {
-                    dealer = lobbyPlayerList.get(0);
-                }
+        synchronized (lobbyPlayerList) {
+            lobbyPlayerList.remove(player);
+            int lobbySize = lobbyPlayerList.size();
+            if (dealer.equals(player) && lobbySize > 0) {
+                dealer = lobbyPlayerList.get(0);
+            }
 
-                // RoundPlayer removals handled separately, to ensure the player
-                // 'remains' until the end of the round, though their actions are
-                // automated. This avoids rage quitting.
+            synchronized (round) {
+                // RoundPlayer removals handled separately for scoring and logic reasons
+                round.removePlayer(player);
 
-                synchronized (round) {
-                    round.removePlayer(player);
-                    // Restart round if finished...
-                    // Stays in lock because this is contingent on round size
-                    if (round.getState() == RoundState.FINISHED && lobbyPlayerList.size() > 1) {
-                        startNextRound();
-                    }
+                // Restart round if finished...
+                // Stays in lock because this is contingent on round size
+                if (round.getState() == RoundState.FINISHED && lobbyPlayerList.size() > 1) {
+                    startNextRound();
                 }
             }
         }
     }
 
-    public List<Player> getBrokePlayers() {
+    public List<Player> removeBrokePlayers() {
         List<Player> eliminatedPlayers = new LinkedList<>();
 
         synchronized (lobbyPlayerList) {
@@ -110,14 +101,12 @@ public class ServerModel {
                     eliminatedPlayers.add(player);
                 }
             }
-
-            for (Player eliminatedPlayer : eliminatedPlayers) {
-                removePlayer(eliminatedPlayer);
-            }
+            eliminatedPlayers.forEach(player -> removePlayer(player));
         }
 
         // Return immutable list for safety
         return Collections.unmodifiableList(eliminatedPlayers);
+
     }
 
     public Player getDealer() {
@@ -137,13 +126,8 @@ public class ServerModel {
     public void startNextRound() {
         // Passes lobbyPlayerList as unmodifiable, just in case any future round changes risk
         // mutation.
-        synchronized (lobbyPlayerList) {
-            // Starts new game if lobby is greater than 1
-            if (lobbyPlayerList.size() > 1) {
-                synchronized (round) {
-                    round.reset(Collections.unmodifiableList(lobbyPlayerList), dealer, stake);
-                }
-            }
+        synchronized (round) {
+            round.reset(Collections.unmodifiableList(lobbyPlayerList), dealer, stake);
         }
     }
 

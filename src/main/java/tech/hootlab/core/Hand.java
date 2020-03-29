@@ -8,6 +8,7 @@ package tech.hootlab.core;
  * A class which represents a players hand.
  */
 public class Hand extends Deck implements Comparable<Hand> {
+    private static final long serialVersionUID = 1L;
 
     // Uses empty object array, as this is serializable
     // https://stackoverflow.com/questions/15638972/is-it-okay-to-to-make-the-lock-transient-for-a-serializable-class

@@ -8,25 +8,23 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.logging.Logger;
 import javax.swing.BoxLayout;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
-import javax.swing.ScrollPaneConstants;
 import tech.hootlab.core.Player;
 
 public class ClientView extends JFrame {
     private static final long serialVersionUID = 1L;
 
-    private static final String QUIT_MESSAGE =
-            "Hope you're back for mo' blackjack and twenty-one fun! Bye!";
+    private final static Logger LOGGER = Logger.getLogger(ClientView.class.getName());
 
     private static final int WINDOW_WIDTH = 800;
     private static final int PLAYER_SECTION_HEIGHT = 250;
     private static final int WINDOW_HEIGHT = 800;
-    private static final int SCROLLBAR_WIDTH = 10;
 
     private JPanel gamePanel;
     private JScrollPane gameContainer;
@@ -43,8 +41,6 @@ public class ClientView extends JFrame {
         gamePanel.setLayout(new BoxLayout(gamePanel, BoxLayout.PAGE_AXIS));
 
         gameContainer = new JScrollPane(gamePanel);
-        gameContainer.getVerticalScrollBar().setPreferredSize(new Dimension(SCROLLBAR_WIDTH, 0));
-        gameContainer.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
         gameContainer.getViewport().setPreferredSize(
                 new Dimension(WINDOW_WIDTH, WINDOW_HEIGHT - PLAYER_SECTION_HEIGHT));
 
@@ -58,6 +54,8 @@ public class ClientView extends JFrame {
         userView = new PlayerView(null, WINDOW_WIDTH, PLAYER_SECTION_HEIGHT);
         userControlView = new PlayerControlView(controller);
 
+
+
         userPanel.add(userView, BorderLayout.CENTER);
         userPanel.add(userControlView, BorderLayout.SOUTH);
 
@@ -68,7 +66,7 @@ public class ClientView extends JFrame {
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         this.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent winEvt) {
-                controller.disconnect(QUIT_MESSAGE);
+                controller.quit();
             }
         });
 
@@ -82,7 +80,6 @@ public class ClientView extends JFrame {
 
     private void render(JComponent component) {
         component.repaint();
-        // Revalidate is needed, because we're adding JPanels on the fly.
         component.revalidate();
     }
 
@@ -96,8 +93,8 @@ public class ClientView extends JFrame {
     }
 
     public void addPlayer(Player player) {
-        PlayerView playerView =
-                new PlayerView(player, WINDOW_WIDTH - SCROLLBAR_WIDTH, PLAYER_SECTION_HEIGHT);
+        LOGGER.info("Adding player: " + player);
+        PlayerView playerView = new PlayerView(player, WINDOW_WIDTH, PLAYER_SECTION_HEIGHT);
         // Store for later referencing by player ID
         playerViewMap.put(player.getID(), playerView);
         gamePanel.add(playerView);
@@ -112,19 +109,19 @@ public class ClientView extends JFrame {
     }
 
     public void updateHand(Player player) {
-
+        LOGGER.info("Updating player hand: " + player);
         PlayerView playerView = playerViewMap.get(player.getID());
         playerView.setHand(player.getHand());
     }
 
     public void updateTokens(Player player) {
-
+        LOGGER.info("Updating player tokens: " + player);
         PlayerView playerView = playerViewMap.get(player.getID());
         playerView.setTokens(player.getTokens());
     }
 
     public void updateStatus(Player player) {
-
+        LOGGER.info("Updating player status: " + player);
         PlayerView playerView = playerViewMap.get(player.getID());
         playerView.setStatus(player.getStatus());
     }

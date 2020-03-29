@@ -6,11 +6,6 @@ public class SocketMessage implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    // This value is a 'poison pill' used to close blocking queues. (See Java BlockingQueue docs).
-    // I've been working on this so long, for sanity's sake I'm throwing in an easter egg to amuse
-    // myself. In the real world this would be a sensible name, like "POISON".
-    public static final String POISON = "https://www.youtube.com/watch?v=_mej5wS7viw";
-
     public static final String CONNECT = "CONNECT";
     public static final String SET_USER = "SET_USER";
 

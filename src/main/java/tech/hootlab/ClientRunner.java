@@ -6,8 +6,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.UUID;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 import tech.hootlab.client.ClientSettings;
 
 public class ClientRunner implements SocketMessageSender {
@@ -24,17 +24,15 @@ public class ClientRunner implements SocketMessageSender {
 
     public ClientRunner(Socket client, ServerController controller) {
         this.controller = controller;
-
         this.clientID = UUID.randomUUID().toString();
         this.client = client;
-
-        clientWriter = new ClientWriter();
-        writeThread = new Thread(clientWriter);
-        writeThread.start();
 
         readThread = new Thread(new ClientReader());
         readThread.start();
 
+        clientWriter = new ClientWriter();
+        writeThread = new Thread(clientWriter);
+        writeThread.start();
     }
 
     public String getID() {
@@ -46,14 +44,8 @@ public class ClientRunner implements SocketMessageSender {
     }
 
     public void disconnect() {
-        try {
-            // Send a poison pill to the blocking queue to terminate
-            sendMessage(new SocketMessage(SocketMessage.POISON, null));
-            // Close client connection
-            client.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        readThread.interrupt();
+        writeThread.interrupt();
     }
 
     // Private class so we can access instance variables
@@ -93,13 +85,15 @@ public class ClientRunner implements SocketMessageSender {
                             break;
 
                         default:
-                            throw new IllegalArgumentException("API command not recognised");
+                            break;
                     }
                 }
 
+                objectInputStream.close();
+
             } catch (EOFException e) {
-                controller.removePlayer(clientID);
                 disconnect();
+                controller.removePlayer(clientID);
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             } catch (IOException e) {
@@ -110,8 +104,9 @@ public class ClientRunner implements SocketMessageSender {
 
     // Private class so we can access instance variables
     private class ClientWriter implements Runnable {
-        private BlockingQueue<SocketMessage> messageQueue = new LinkedBlockingQueue<>();
-        private ObjectOutputStream objectOutputStream;
+
+        ConcurrentLinkedQueue<SocketMessage> messageQueue = new ConcurrentLinkedQueue<>();
+        ObjectOutputStream objectOutputStream;
 
         public ClientWriter() {
             try {
@@ -123,43 +118,22 @@ public class ClientRunner implements SocketMessageSender {
         }
 
         public void sendMessage(SocketMessage message) {
-            try {
-                messageQueue.put(message);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            messageQueue.add(message);
         }
 
         @Override
         public void run() {
-            boolean run = true;
-            while (run) {
+            while (true) {
                 try {
-                    // Takes from the blocking queue. I was originally using a LinkedConcurrentQueue
-                    // and checking if it was empty in a loop, but this absolutely killed my CPU.
-                    // Lessons learnt...
-                    SocketMessage message = messageQueue.take();
-                    if (message.getCommand().equals(SocketMessage.POISON)) {
-                        // Shut down when poison pill received from client disconnect.
-                        run = false;
-                    } else {
-                        objectOutputStream.writeObject(message);
+                    if (!messageQueue.isEmpty()) {
+                        objectOutputStream.writeObject(messageQueue.poll());
                         // Reset to avoid caching, as we send the same objects with different
                         // internal states. This bug was a nightmare to find!
                         objectOutputStream.reset();
                     }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            }
-
-            try {
-                objectOutputStream.close();
-                client.close();
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         }
     }

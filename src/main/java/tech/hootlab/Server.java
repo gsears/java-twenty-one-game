@@ -28,8 +28,11 @@ public class Server implements Runnable {
         while (true) {
             Socket clientSocket = null;
             try {
+
                 clientSocket = server.accept();
-                controller.addClient(new ClientRunner(clientSocket, controller));
+
+                ClientRunner client = new ClientRunner(clientSocket, controller);
+                controller.addClient(client);
             } catch (IOException e) {
                 e.printStackTrace();
             }
