@@ -38,8 +38,10 @@ public class ServerController {
             switch (roundState) {
                 case READY:
                     sendMessageToAll(SocketMessage.SET_PLAYERS,
-                            // Cast to LinkedList as this is definitiely synchronised.
-                            (LinkedList<Player>) model.getRoundPlayerList());
+                            // Cast to Serializable, as we do not know the type of List from
+                            // Collections.unmodifiableList, but it is guaranteed to be Serializable
+                            // as per docs.
+                            (Serializable) model.getRoundPlayerList());
                     sendMessageToAll(SocketMessage.ROUND_STARTED, model.getDealer());
                     break;
 
@@ -51,7 +53,13 @@ public class ServerController {
                     sendMessageToAll(SocketMessage.ROUND_FINISHED, null);
                     // Kick out any dead-beat no has-moneys.
                     List<Player> brokeList = model.removeBrokePlayers();
+                    // This will disconnect them clientside, which will in turn remove them return
+                    // an end of file connection in ClientRunner which will initialize standard
+                    // removal process.
                     brokeList.forEach(p -> sendMessage(p.getID(), SocketMessage.DISCONNECT, null));
+
+                    // Start new round
+                    model.startNextRound();
                     break;
 
                 default:
@@ -92,8 +100,7 @@ public class ServerController {
         sendMessage(clientID, SocketMessage.SET_USER, player);
         // Send the client a list of the current players so they can spectate round in
         // progress
-        sendMessage(clientID, SocketMessage.SET_PLAYERS,
-                (LinkedList<Player>) model.getRoundPlayerList());
+        sendMessage(clientID, SocketMessage.SET_PLAYERS, (Serializable) model.getRoundPlayerList());
 
         // This is internally thread-safe. Delays getting here should be tolerable as in the
         // totally unlikely worst case scenario, the player will miss a round or two, but the
@@ -102,9 +109,11 @@ public class ServerController {
     }
 
     public void removePlayer(String clientID) {
+        // Remove client from map so they are not updated with subsequent messages
+        clientMap.remove(clientID);
         // This is internally thread-safe
         model.removePlayer(clientID);
-        clientMap.remove(clientID);
+
     }
 
     public void hit(String ID) {
