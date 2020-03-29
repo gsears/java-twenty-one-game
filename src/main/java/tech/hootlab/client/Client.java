@@ -86,7 +86,7 @@ public class Client {
 
     public static void main(String[] args) {
         // Comment out to enable logs
-        // LogManager.getLogManager().reset();
+        LogManager.getLogManager().reset();
         new Client();
     }
 }

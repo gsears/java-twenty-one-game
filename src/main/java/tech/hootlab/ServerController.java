@@ -16,7 +16,7 @@ public class ServerController {
     public final int ROUND_STAKE = 20;
 
     // For propagating messages to all clients
-    private Map<String, SocketMessageSender> clientMap = new ConcurrentHashMap<>();
+    private Map<String, ClientRunner> clientMap = new ConcurrentHashMap<>();
     private ServerModel model;
 
     public ServerController() {
@@ -147,7 +147,7 @@ public class ServerController {
     }
 
     private void sendMessage(String ID, SocketMessage messageObject) {
-        SocketMessageSender client = clientMap.get(ID);
+        ClientRunner client = clientMap.get(ID);
         if (client != null) {
             client.sendMessage(messageObject);
         }

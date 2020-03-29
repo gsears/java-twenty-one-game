@@ -10,7 +10,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import tech.hootlab.client.ClientSettings;
 
-public class ClientRunner implements SocketMessageSender {
+public class ClientRunner {
 
     private final Socket client;
     private final String clientID;
