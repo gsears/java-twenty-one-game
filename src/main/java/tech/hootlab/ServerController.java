@@ -1,7 +1,6 @@
 package tech.hootlab;
 
 import java.io.Serializable;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,8 +37,8 @@ public class ServerController {
             switch (roundState) {
                 case READY:
                     sendMessageToAll(SocketMessage.SET_PLAYERS,
-                            // Cast to LinkedList as this is definitiely synchronised.
-                            (LinkedList<Player>) model.getRoundPlayerList());
+                            // This list is guaranteed to be serializable by the Collections lib.
+                            (Serializable) model.getRoundPlayerList());
                     sendMessageToAll(SocketMessage.ROUND_STARTED, model.getDealer());
                     break;
 
@@ -49,9 +48,15 @@ public class ServerController {
 
                 case FINISHED:
                     sendMessageToAll(SocketMessage.ROUND_FINISHED, null);
-                    // Kick out any dead-beat no has-moneys.
-                    List<Player> brokeList = model.removeBrokePlayers();
+                    // Kick out any dead-beat no-has-moneys.
+                    List<Player> brokeList = model.getBrokePlayers();
+                    // This will disconnect them clientside, which will in turn remove them return
+                    // an end of file connection in ClientRunner which will initialize standard
+                    // removal process.
                     brokeList.forEach(p -> sendMessage(p.getID(), SocketMessage.DISCONNECT, null));
+
+                    // Start new round
+                    model.startNextRound();
                     break;
 
                 default:
@@ -91,9 +96,8 @@ public class ServerController {
         // Send the client their player object.
         sendMessage(clientID, SocketMessage.SET_USER, player);
         // Send the client a list of the current players so they can spectate round in
-        // progress
-        sendMessage(clientID, SocketMessage.SET_PLAYERS,
-                (LinkedList<Player>) model.getRoundPlayerList());
+        // progress.
+        sendMessage(clientID, SocketMessage.SET_PLAYERS, (Serializable) model.getRoundPlayerList());
 
         // This is internally thread-safe. Delays getting here should be tolerable as in the
         // totally unlikely worst case scenario, the player will miss a round or two, but the
@@ -102,9 +106,12 @@ public class ServerController {
     }
 
     public void removePlayer(String clientID) {
-        // This is internally thread-safe
-        model.removePlayer(clientID);
+        // Send the client a poison message to shut down input stream
+        sendMessage(clientID, SocketMessage.POISON, null);
+        // Remove from client map to ensure no more messages are sent to this d/ced thread
         clientMap.remove(clientID);
+        // This has thread / logic mechanisms to deal with a removed player.
+        model.removePlayer(clientID);
     }
 
     public void hit(String ID) {

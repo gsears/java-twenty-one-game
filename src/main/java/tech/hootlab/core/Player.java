@@ -18,7 +18,6 @@ public class Player implements PropertyChangeObservable, Serializable {
     private Hand hand;
     private PlayerState status = PlayerState.PLAYING;
 
-
     // Uses empty object array, as this is serializable
     // https://stackoverflow.com/questions/15638972/is-it-okay-to-to-make-the-lock-transient-for-a-serializable-class
     private final Object tokenLock = new Object[0];
