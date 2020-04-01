@@ -87,15 +87,4 @@ public class Deck implements Serializable {
             cardList.addLast(card);
         }
     }
-
-    /**
-     * Add a deck to the bottom of this deck.
-     *
-     * @param deck The deck to add.
-     */
-    public void add(Deck deck) {
-        synchronized (cardList) {
-            cardList.addAll(deck.getCardList());
-        }
-    }
 }

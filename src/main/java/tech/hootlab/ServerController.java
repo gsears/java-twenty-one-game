@@ -34,6 +34,7 @@ public class ServerController {
         this.model = new ServerModel(ROUND_STAKE);
 
         // Attach listeners to the model's round object.
+        // Uses anonymous lambda functions for brevity.
         model.addRoundPropertyChangeListener(Round.CURRENT_PLAYER_CHANGE_EVENT, evt -> {
             sendMessageToAll(SocketMessage.ROUND_PLAYER_CHANGE, (Player) evt.getNewValue());
         });
@@ -51,7 +52,7 @@ public class ServerController {
                             // Cast to Serializable, as we do not know the type of List from
                             // Collections.unmodifiableList, but it is guaranteed to be Serializable
                             // as per docs.
-                            (Serializable) model.getRoundPlayerList());
+                            (Serializable) model.getPlayersInRound());
                     sendMessageToAll(SocketMessage.ROUND_STARTED, model.getDealer());
                     break;
 
@@ -69,7 +70,7 @@ public class ServerController {
                     brokeList.forEach(p -> sendMessage(p.getID(), SocketMessage.DISCONNECT, null));
 
                     // Start new round
-                    model.startNextRound();
+                    model.initialiseNextRound();
                     break;
 
                 default:
@@ -110,7 +111,7 @@ public class ServerController {
         sendMessage(clientID, SocketMessage.SET_USER, player);
         // Send the client a list of the current players so they can spectate round in
         // progress
-        sendMessage(clientID, SocketMessage.SET_PLAYERS, (Serializable) model.getRoundPlayerList());
+        sendMessage(clientID, SocketMessage.SET_PLAYERS, (Serializable) model.getPlayersInRound());
 
         // This is internally thread-safe. Delays getting here should be tolerable as in the
         // totally unlikely worst case scenario, the player will miss a round or two, but the
@@ -135,7 +136,7 @@ public class ServerController {
     }
 
     public void deal(String ID) {
-        model.deal();
+        model.startRound();
     }
 
     private void sendMessageToAll(String message, Serializable payload) {

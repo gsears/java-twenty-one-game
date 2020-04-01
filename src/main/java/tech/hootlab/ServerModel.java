@@ -43,13 +43,13 @@ public class ServerModel {
         this.stake = stake;
     }
 
-    public List<Player> getRoundPlayerList() {
+    public List<Player> getPlayersInRound() {
         // Return read only list from round. Internal players are thread-safe.
         // (Round deals with its own state and is confined in this class).
         return Collections.unmodifiableList(round.getPlayerList());
     }
 
-    public List<Player> getLobbyPlayerList() {
+    public List<Player> getPlayersInLobby() {
         // Return read only list. Internal players are thread-safe.
         return Collections.unmodifiableList(lobbyPlayerList);
     }
@@ -66,7 +66,7 @@ public class ServerModel {
 
             // We've got enough players to play
             if (lobbyPlayerList.size() == 2) {
-                startNextRound();
+                initialiseNextRound();
             }
         }
     }
@@ -107,7 +107,7 @@ public class ServerModel {
                     // Restart round if finished...
                     // Stays in lock because this is contingent on round size
                     if (round.getState() == RoundState.FINISHED && lobbyPlayerList.size() > 1) {
-                        startNextRound();
+                        initialiseNextRound();
                     }
                 }
             }
@@ -147,7 +147,7 @@ public class ServerModel {
 
     // Gameplay functions
 
-    public void startNextRound() {
+    public void initialiseNextRound() {
         // Passes lobbyPlayerList as unmodifiable, just in case any future round changes risk
         // mutation.
         synchronized (lobbyPlayerList) {
@@ -160,7 +160,7 @@ public class ServerModel {
         }
     }
 
-    public void deal() {
+    public void startRound() {
         synchronized (round) {
             round.start();
         }
